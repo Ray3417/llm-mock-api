@@ -29,3 +29,6 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# 项目内部规范文件
+AGENTS.md
