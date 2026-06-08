@@ -65,14 +65,10 @@ def build_mock_request(
         streaming=body.get("stream") is not False,
         messages=messages,
         last_message=user_messages[-1].content if user_messages else "",
-        system_message=next(
-            (m.content for m in messages if m.role == "system"), ""
-        ),
+        system_message=next((m.content for m in messages if m.role == "system"), ""),
         tools=tools,
         tool_names=tuple(t.name for t in tools) if tools is not None else (),
-        last_tool_call_id=(
-            tool_call_messages[-1].tool_call_id if tool_call_messages else None
-        ),
+        last_tool_call_id=(tool_call_messages[-1].tool_call_id if tool_call_messages else None),
         raw=raw,
         headers=dict(meta.headers),
         path=meta.path,

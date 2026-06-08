@@ -32,7 +32,7 @@ def split_text(text: str, chunk_size: int) -> list[str]:
     """
     if chunk_size <= 0 or len(text) <= chunk_size:
         return [text]
-    return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
+    return [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
 
 
 _ID_SUFFIX_LENGTH: int = 12

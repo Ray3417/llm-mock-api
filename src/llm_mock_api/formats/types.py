@@ -42,9 +42,7 @@ class Format(Protocol):
         """此格式匹配的 HTTP 路由路径，如 "/v1/chat/completions"。"""
         ...
 
-    def parse_request(
-        self, body: Any, meta: RequestMeta | None = None
-    ) -> MockRequest:
+    def parse_request(self, body: Any, meta: RequestMeta | None = None) -> MockRequest:
         """解析原始请求体为规范化的 MockRequest。"""
         ...
 

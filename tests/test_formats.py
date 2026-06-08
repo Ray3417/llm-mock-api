@@ -24,6 +24,7 @@ from llm_mock_api.types.reply import ToolCall, Usage
 
 # ── types.py ────────────────────────────────────────────
 
+
 def test_sse_chunk_basic() -> None:
     """SSEChunk 基本字段与可选 event 字段。"""
     chunk = SSEChunk(data='{"text":"hi"}', event="content_block_delta")
@@ -45,6 +46,7 @@ def test_request_meta_basic() -> None:
 
 
 # ── request_helpers.py ─────────────────────────────────
+
 
 def test_is_streaming_true_false() -> None:
     """stream=True 返回 True，stream=False 返回 False — 两条核心路径。"""
@@ -100,13 +102,18 @@ def test_build_mock_request_extracts_tools_and_tool_call() -> None:
     assert req.last_tool_call_id == "call_42"
     # body 无 model 时应回退到 default_model
     req2 = build_mock_request(
-        format="anthropic", body={}, messages=messages,
-        tools=None, default_model="claude-sonnet", raw={},
+        format="anthropic",
+        body={},
+        messages=messages,
+        tools=None,
+        default_model="claude-sonnet",
+        raw={},
     )
     assert req2.model == "claude-sonnet"
 
 
 # ── serialize_helpers.py ────────────────────────────────
+
 
 def test_split_text() -> None:
     """正常分段 + chunk_size<=0 边界。"""

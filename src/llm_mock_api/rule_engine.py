@@ -146,7 +146,7 @@ class _SequenceStep:
 
 class _SequenceResolverResult(NamedTuple):
     """序列解析器的返回值：resolver 是回复函数，entry_count 是步数。"""
-    resolver: Callable[[], Reply]
+    resolver: Callable[[MockRequest], Reply]
     entry_count: int
 
 
@@ -163,7 +163,7 @@ def create_sequence_resolver(
     index: list[int] = [0]  # 用 list 作为可变容器
     last = steps[-1]
 
-    def resolver() -> Reply:
+    def resolver(_req: MockRequest | None = None) -> Reply:
         step = steps[index[0]] if index[0] < len(steps) else last
         index[0] += 1
         rule.options = step.options if step.options is not None else ReplyOptions()
