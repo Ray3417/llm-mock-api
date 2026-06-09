@@ -56,7 +56,7 @@ async def resolve_reply(
     - 任何异常：error 日志 + fallback 兜底
     """
     if matched is None:
-        logger.warning(f'No matching rule for "{mock_req.last_message}", using fallback')
+        logger.warn(f'No matching rule for "{mock_req.last_message}", using fallback')
         return normalise_reply(fallback), None
 
     try:
@@ -113,9 +113,9 @@ def create_route_handler(
         body = await request.json()
         # 对应 TS 的 `for (const [key, val] of Object.entries(request.headers))`
         # 值可能是 list（如多个 Set-Cookie）→ join(', ')；其他值直接用
-        raw_headers = dict(request.headers)
+        raw_headers = [(k, v) for k, v in request.headers.items()]
         headers: dict[str, str] = {}
-        for key, val in raw_headers.items():
+        for key, val in raw_headers:
             if isinstance(val, list):
                 headers[key] = ", ".join(str(v) for v in val)
             else:
@@ -127,7 +127,7 @@ def create_route_handler(
         except PydanticValidationError as err:
             # 对应 TS 的 `if (err instanceof ZodError) { ... }`
             # 只捕获已知的请求验证错误，其他异常向上抛出
-            logger.warning(f"Invalid {fmt.name} request: {err}")
+            logger.warn(f"Invalid {fmt.name} request: {err}")
             return JSONResponse(
                 status_code=HTTP_BAD_REQUEST,
                 content=fmt.serialize_error(
