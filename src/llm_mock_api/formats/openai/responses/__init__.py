@@ -1,8 +1,8 @@
-"""OpenAI chat-completions 线路格式实现。
+"""OpenAI Responses 线路格式实现。
 
-路由: POST /v1/chat/completions
+路由: POST /v1/responses
 
-对应 TS: export const chatCompletionsFormat: Format = { ... }
+对应 TS: export const responsesFormat: Format = { ... }
 """
 
 from __future__ import annotations
@@ -13,13 +13,12 @@ from .parse import parse_request
 from .serialize import serialize, serialize_complete, serialize_error
 
 
-chat_completions_format = FormatImpl(
-    name="openai",
-    route="/v1/chat/completions",
+responses_format = FormatImpl(
+    name="responses",
+    route="/v1/responses",
     parse_request=parse_request,
     is_streaming=is_streaming,
     serialize=serialize,
     serialize_complete=serialize_complete,
     serialize_error=serialize_error,
 )
-"""OpenAI chat-completions 格式单例。"""
