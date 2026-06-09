@@ -5,7 +5,9 @@ from __future__ import annotations
 import re
 
 from llm_mock_api.rule_engine import RuleEngine, create_sequence_resolver
-from llm_mock_api.types import MatchObject, MockRequest, ReplyOptions
+from llm_mock_api.types.reply import ReplyOptions
+from llm_mock_api.types.request import MockRequest
+from llm_mock_api.types.rule import MatchObject
 
 
 def _req(last_message: str = "", model: str = "gpt-4", tool_names: tuple[str, ...] = (),

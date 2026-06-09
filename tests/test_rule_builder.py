@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from llm_mock_api.rule_builder import RuleBuilder, normalise_sequence_entries
 from llm_mock_api.rule_engine import RuleEngine
-from llm_mock_api.types import MatchObject, MockRequest, ReplyOptions
-from llm_mock_api.types.reply import ReplySequenceEntryWithOptions
+from llm_mock_api.types.reply import ReplyOptions, ReplySequenceEntryWithOptions
+from llm_mock_api.types.request import MockRequest
+from llm_mock_api.types.rule import MatchObject
 
 
 def _req(last_message: str = "", tool_names: tuple[str, ...] = (),

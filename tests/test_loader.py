@@ -16,7 +16,7 @@ from llm_mock_api.loader import (
     load_rules_from_path,
 )
 from llm_mock_api.rule_engine import RuleEngine
-from llm_mock_api.types import MockRequest
+from llm_mock_api.types.request import MockRequest
 
 
 def _req(last_message: str = "", model: str = "gpt-4", format: str = "openai") -> MockRequest:
@@ -367,7 +367,7 @@ class TestLoadHandlerFile:
         with tempfile.TemporaryDirectory() as td:
             fp = pathlib.Path(td) / "handler.py"
             fp.write_text(
-                '''from llm_mock_api.types import MockRequest
+                '''from llm_mock_api.types.request import MockRequest
 
 class _Handler:
     def match(self, req: MockRequest) -> bool:
@@ -392,7 +392,7 @@ default = _Handler()
         with tempfile.TemporaryDirectory() as td:
             fp = pathlib.Path(td) / "handlers.py"
             fp.write_text(
-                '''from llm_mock_api.types import MockRequest
+                '''from llm_mock_api.types.request import MockRequest
 
 class _HandlerA:
     def match(self, req: MockRequest) -> bool:

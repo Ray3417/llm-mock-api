@@ -18,8 +18,8 @@ from llm_mock_api.formats.serialize_helpers import (
     tool_id,
 )
 from llm_mock_api.formats.types import SSEChunk
-from llm_mock_api.types import Message, ReplyObject
-from llm_mock_api.types.reply import ToolCall, Usage
+from llm_mock_api.types.request import Message
+from llm_mock_api.types.reply import ReplyObject, ToolCall, Usage
 
 
 # ── types.py ────────────────────────────────────────────
