@@ -107,7 +107,7 @@ class RuleSummary:
     description: str
     """规则匹配内容的人类可读描述。"""
 
-    remaining: int
+    remaining: float
     """剩余匹配次数。默认为 `float('inf')`（无限）。"""
 
 
@@ -144,4 +144,4 @@ class Rule:
     match: Callable[[MockRequest], bool]
     resolve: Resolver
     options: ReplyOptions
-    remaining: int
+    remaining: float
