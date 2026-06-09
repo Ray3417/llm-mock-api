@@ -16,7 +16,7 @@ from typing import Any, cast
 from pydantic import ValidationError
 
 from ...request_helpers import RequestMeta, build_mock_request
-from ....types import Message, MockRequest, ToolDef
+from ....types.request import Message, MockRequest, ToolDef
 from .schema import FunctionTool, ResponsesRequest
 
 

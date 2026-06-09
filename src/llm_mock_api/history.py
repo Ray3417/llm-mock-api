@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 
-from .types import MockRequest
+from .types.request import MockRequest
 
 
 @dataclass(frozen=True, slots=True)

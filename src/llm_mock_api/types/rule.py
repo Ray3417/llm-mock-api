@@ -117,7 +117,8 @@ class Handler(Protocol):
     处理器文件的默认导出结构。可以导出单个处理器或处理器数组。
 
     示例：
-        from llm_mock_api.types import Handler, MockRequest
+        from llm_mock_api.types.rule import Handler
+        from llm_mock_api.types.request import MockRequest
 
         class MyHandler:
             def match(self, req: MockRequest) -> bool:

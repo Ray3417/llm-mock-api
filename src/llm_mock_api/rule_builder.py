@@ -21,19 +21,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Final
 
-from .types import (
-    ErrorReply,
-    Match,
-    MatchObject,
-    PendingRule,
-    ReplyObject,
-    ReplyOptions,
-    Resolver,
-    Rule,
-    RuleHandle,
-    SequenceEntry,
-)
-from .types.reply import ReplySequenceEntryWithOptions
+from .types.reply import ErrorReply, ReplyObject, ReplyOptions, Resolver, SequenceEntry, ReplySequenceEntryWithOptions
+from .types.rule import Match, MatchObject, PendingRule, Rule, RuleHandle
 from .rule_engine import RuleEngine, _SequenceStep, create_sequence_resolver
 
 

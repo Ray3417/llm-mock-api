@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Any, Literal, cast
 
 from ...request_helpers import RequestMeta, build_mock_request
-from ....types import Message, MockRequest, ToolDef
+from ....types.request import Message, MockRequest, ToolDef
 from .schema import OpenAIRequest
 
 

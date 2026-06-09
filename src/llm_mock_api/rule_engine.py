@@ -27,16 +27,9 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, fields as dataclass_fields
 from typing import NamedTuple
 
-from .types import (
-    Match,
-    MatchObject,
-    MockRequest,
-    Reply,
-    ReplyOptions,
-    Resolver,
-    Rule,
-    RuleSummary,
-)
+from .types.reply import Reply, ReplyOptions, Resolver
+from .types.request import MockRequest
+from .types.rule import Match, MatchObject, Rule, RuleSummary
 
 
 # Python 的 re.Pattern 不会在匹配间保留状态，无需对应 TS 的 safeRegex 函数

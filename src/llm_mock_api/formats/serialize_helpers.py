@@ -14,8 +14,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Mapping
 
-from ..types import ReplyObject
-from ..types.reply import Usage
+from ..types.reply import ReplyObject, Usage
 
 
 MS_PER_SECOND: int = 1000

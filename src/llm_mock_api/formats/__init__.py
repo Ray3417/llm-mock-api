@@ -9,7 +9,8 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from ..types import ErrorReply, FormatName, MockRequest, ReplyObject, ReplyOptions
+from ..types.reply import ErrorReply, ReplyObject, ReplyOptions
+from ..types.request import FormatName, MockRequest
 from .request_helpers import RequestMeta
 from .types import SSEChunk
 

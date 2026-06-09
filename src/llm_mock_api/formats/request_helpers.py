@@ -14,7 +14,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..types import FormatName, Message, MockRequest, ToolDef
+from ..types.request import FormatName, Message, MockRequest, ToolDef
 
 
 @dataclass(frozen=True, slots=True)

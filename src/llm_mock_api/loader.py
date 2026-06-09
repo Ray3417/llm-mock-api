@@ -72,19 +72,25 @@ def _parse_regex_string(s: str) -> re.Pattern[str] | str:
 _KNOWN_FORMATS = frozenset(("openai", "anthropic", "responses"))
 
 
-def _compile_match(when: _Json5MatchRaw) -> Match:
+def _regex_or_none(v: object) -> str | re.Pattern[str] | None:
+    """辅助：字符串尝试解析为正则，其他类型返回 None。"""
+    if isinstance(v, str):
+        return _parse_regex_string(v)
+    return None
+
+
+def _compile_match(when: _Json5MatchRaw, *, file_path: str = "") -> Match:
     """把 JSON5 中的 match 配置转换为运行时 Match。"""
     if isinstance(when, str):
         return _parse_regex_string(when)
 
-    def _regex_or_none(v: object) -> str | re.Pattern[str] | None:
-        if isinstance(v, str):
-            return _parse_regex_string(v)
-        return None
-
     fmt = when.get("format")
-    if fmt is not None and (not isinstance(fmt, str) or fmt not in _KNOWN_FORMATS):
-        raise ValueError(f"Invalid 'format' value: {fmt!r}. Expected one of: openai, anthropic, responses")
+    if fmt is not None:
+        if not isinstance(fmt, str) or fmt not in _KNOWN_FORMATS:
+            raise ValueError(
+                f"Invalid 'format' value in {file_path or '<unknown>'}: {fmt!r}. "
+                f"Expected one of: openai, anthropic, responses",
+            )
 
     return MatchObject(
         message=_regex_or_none(when.get("message")),
@@ -94,26 +100,38 @@ def _compile_match(when: _Json5MatchRaw) -> Match:
     )
 
 
-def _parse_reply(raw: _Json5ReplyRaw) -> Reply:
+def _parse_reply(raw: _Json5ReplyRaw, *, file_path: str = "") -> Reply:
     """把 JSON5 中的 reply 值转换为 Reply（str 或 ReplyObject）。"""
     if isinstance(raw, str):
         return raw
+
+    text_val = raw.get("text")
+    if text_val is not None and not isinstance(text_val, str):
+        raise ValueError(f"Invalid 'text' in reply in {file_path or '<unknown>'}: expected string")
+
+    reasoning_val = raw.get("reasoning")
+    if reasoning_val is not None and not isinstance(reasoning_val, str):
+        raise ValueError(f"Invalid 'reasoning' in reply in {file_path or '<unknown>'}: expected string")
+
     tools_raw = raw.get("tools")
     tools: list[ToolCall] | None = None
-    if tools_raw is not None and isinstance(tools_raw, list):
+    if tools_raw is not None:
+        if not isinstance(tools_raw, list):
+            raise ValueError(f"Invalid 'tools' in reply in {file_path or '<unknown>'}: expected array")
         tools = []
-        for t in tools_raw:
-            if isinstance(t, dict) and "name" in t:
-                args_val = t.get("args", {})
-                tools.append(
-                    ToolCall(
-                        name=t["name"],
-                        args=args_val if isinstance(args_val, dict) else {},
-                    )
+        for i, t in enumerate(tools_raw):
+            if not isinstance(t, dict) or "name" not in t:
+                raise ValueError(f"Invalid tools[{i}] in reply in {file_path or '<unknown>'}: expected {{ name: string, args?: object }}")
+            args_val = t.get("args", {})
+            tools.append(
+                ToolCall(
+                    name=t["name"],
+                    args=args_val if isinstance(args_val, dict) else {},
                 )
+            )
     return ReplyObject(
-        text=raw.get("text") if isinstance(raw.get("text"), str) else None,
-        reasoning=raw.get("reasoning") if isinstance(raw.get("reasoning"), str) else None,
+        text=text_val if isinstance(text_val, str) else None,
+        reasoning=reasoning_val if isinstance(reasoning_val, str) else None,
         tools=tools,
     )
 
@@ -147,10 +165,11 @@ def _add_sequence_rule(
     """注册一个回复序列规则（每次匹配推进到下一条回复）。"""
     steps: list[_SequenceStep] = []
     for entry in entries:
-        if isinstance(entry, str) or not isinstance(entry, dict) or "reply" not in entry:
+        if isinstance(entry, str) or (isinstance(entry, dict) and "reply" not in entry):
+            # 字符串 或 无 reply 字段的对象 → 当作 reply 解析（可能是模板引用）
             resolved = _resolve_reply_ref(entry, templates, file_path)
-            steps.append(_SequenceStep(reply=_parse_reply(resolved)))
-        else:
+            steps.append(_SequenceStep(reply=_parse_reply(resolved, file_path=file_path)))
+        elif isinstance(entry, dict):
             reply_raw = entry["reply"]
             resolved = _resolve_reply_ref(reply_raw, templates, file_path)
             latency = entry.get("latency")
@@ -175,7 +194,9 @@ def _add_sequence_rule(
             opts = None
             if valid_latency is not None or valid_chunk_size is not None:
                 opts = ReplyOptions(latency=valid_latency, chunk_size=valid_chunk_size)
-            steps.append(_SequenceStep(reply=_parse_reply(resolved), options=opts))
+            steps.append(_SequenceStep(reply=_parse_reply(resolved, file_path=file_path), options=opts))
+        else:
+            raise ValueError(f"Invalid sequence entry in {file_path}: expected string or object")
 
     rule = engine.add(match, "")
     resolver, entry_count = create_sequence_resolver(steps, rule)
@@ -205,15 +226,17 @@ async def _load_json5_file(file_path: str, ctx: LoadContext) -> None:
         rules = rules_val
 
         templates_val = parsed.get("templates")
+        if templates_val is not None and not isinstance(templates_val, dict):
+            raise ValueError(f"Invalid 'templates' in {file_path}: expected object")
         templates = templates_val if isinstance(templates_val, dict) else None
 
-        fallback = parsed.get("fallback") if "fallback" in parsed else None
+        fallback = parsed.get("fallback")
     else:
         raise ValueError(f"Invalid JSON5 file {file_path}: expected array or object at top level")
 
     # 设置 fallback
     if fallback is not None and ctx.set_fallback is not None:
-        ctx.set_fallback(_parse_reply(fallback))
+        ctx.set_fallback(_parse_reply(fallback, file_path=file_path))
 
     # 逐条注册规则
     for r in rules:
@@ -226,7 +249,7 @@ async def _load_json5_file(file_path: str, ctx: LoadContext) -> None:
         if not isinstance(when, (str, dict)):
             raise ValueError(f"Rule in {file_path} has invalid 'when'")
 
-        match = _compile_match(when)
+        match = _compile_match(when, file_path=file_path)
 
         # replies（序列）优先于 reply（单条）
         if "replies" in r:
@@ -242,7 +265,7 @@ async def _load_json5_file(file_path: str, ctx: LoadContext) -> None:
                 raise ValueError(f"Rule in {file_path} has invalid 'reply'")
 
             resolved = _resolve_reply_ref(reply_val, templates, file_path)
-            reply = _parse_reply(resolved)
+            reply = _parse_reply(resolved, file_path=file_path)
             rule = ctx.engine.add(match, reply)
             times_val = r.get("times")
             if times_val is not None:
@@ -298,7 +321,7 @@ async def _load_handler_file(file_path: str, ctx: LoadContext) -> None:
     if hasattr(mod, "fallback") and ctx.set_fallback is not None:
         fb = getattr(mod, "fallback")
         if isinstance(fb, (str, dict)):
-            ctx.set_fallback(_parse_reply(fb))
+            ctx.set_fallback(_parse_reply(fb, file_path=file_path))
 
     for handler in handlers:
         ctx.engine.add_handler(
