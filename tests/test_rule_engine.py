@@ -194,15 +194,3 @@ class TestSequenceResolver:
         import pytest
         with pytest.raises(ValueError):
             create_sequence_resolver([], rule)
-
-
-class TestAddHandler:
-    """测试 add_handler 自定义处理器。"""
-
-    def test_add_handler_matches(self) -> None:
-        """add_handler 应直接使用传入的匹配函数。"""
-        engine = RuleEngine()
-        engine.add_handler(lambda r: "urgent" in r.last_message, "IMPORTANT")
-        rule = engine.match(_req(last_message="this is urgent"))
-        assert rule is not None
-        assert rule.resolve == "IMPORTANT"

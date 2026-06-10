@@ -198,17 +198,6 @@ class RuleEngine:
             self._rules.pop(idx)
             self._rules.insert(0, rule)
 
-    def add_handler(
-        self,
-        match_fn: Callable[[MockRequest], bool],
-        respond: Resolver,
-        description: str = "(handler)",
-    ) -> Rule:
-        """注册一个自定义处理器（不使用 Match 编译）。"""
-        rule = _create_rule(match_fn, respond, ReplyOptions(), description)
-        self._rules.append(rule)
-        return rule
-
     def match(self, req: MockRequest) -> Rule | None:
         """按顺序查找匹配请求的第一条规则。
 

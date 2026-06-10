@@ -987,12 +987,13 @@ class TestRuleConfigHttp:
                 assert r1.status_code == 200
                 assert r1.json()["choices"][0]["message"]["content"] == "world"
 
-                # /v1/responses —— 不同的请求体结构
+                # /v1/responses —— 不同的请求体结构（显式 stream=False 确保非流式
                 r2 = await http.post(
                     "/v1/responses",
                     json={
                         "model": "gpt-4",
                         "input": [{"role": "user", "content": "hi"}],
+                        "stream": False,
                     },
                 )
                 assert r2.status_code == 200
@@ -1002,7 +1003,7 @@ class TestRuleConfigHttp:
 
     @pytest.mark.asyncio
     async def test_request_without_stream_key(self) -> None:
-        """请求体不含 stream 键（某些老客户端）：应正常响应非流式。"""
+        """请求体不含 stream 键（某些老客户端）：默认流式，也应当返回 200。"""
         async with MockServer() as server:
             server.when("x").reply("y")
             import httpx2
@@ -1013,7 +1014,11 @@ class TestRuleConfigHttp:
                     json={"model": "gpt-4", "messages": [{"role": "user", "content": "x"}]},
                 )
                 assert resp.status_code == 200
-                assert resp.json()["choices"][0]["message"]["content"] == "y"
+                # 默认流式：content-type 为 text/event-stream
+                ct = resp.headers.get("content-type", "")
+                assert "text/event-stream" in ct
+                # SSE 数据里应包含 "y"
+                assert "y" in resp.text
 
     # ------------------------------------------------------------------
     # 规则顺序 —— 先匹配优先

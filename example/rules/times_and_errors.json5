@@ -14,9 +14,9 @@
 // 关于 error / HTTP 错误回复：
 //   JSON5 规则文件中的 reply 当前不直接支持 { error: { status, message } }。
 //   如需返回 HTTP 429 / 500 / 404 等错误响应，
-//   请在 processor.py（Python 处理器）中通过返回
+//   请在编程式 API 中通过返回
 //       ReplyObject(error=ErrorReply(status=429, message="..."))
-//   来实现。详见 processor.py 中的示例。
+//   来实现。
 // ============================================================================
 
 {

@@ -35,13 +35,13 @@ EMPTY_META: RequestMeta = RequestMeta()
 def is_streaming(body: Any) -> bool:
     """检查请求体是否要求流式响应。
 
-    语义：仅当 `stream` 字段显式为 `True` 时返回 True；
-    其他所有情况（缺失、False、非布尔值）默认视为非流式，
-    与 OpenAI 官方 API 行为一致。
+    语义：仅当 `stream` 字段显式为 `False` 时返回 False；
+    其他所有情况（缺失、True、非布尔值）默认视为流式，
+    与 LLM API 的普遍默认行为一致。
     """
     if not isinstance(body, Mapping):
-        return False
-    return body.get("stream") is True
+        return True
+    return body.get("stream") is not False
 
 
 def build_mock_request(

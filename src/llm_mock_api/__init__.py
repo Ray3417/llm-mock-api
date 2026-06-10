@@ -9,7 +9,6 @@ from .types.reply import (
 )
 from .types.request import FormatName, Message, MockRequest, ToolDef
 from .types.rule import (
-    Handler,
     Match,
     MatchObject,
     PendingRule,
@@ -36,7 +35,6 @@ __all__ = [
     "PendingRule",
     "RuleHandle",
     "RuleSummary",
-    "Handler",
     "Rule",
     "MockServer",
     "MockServerOptions",

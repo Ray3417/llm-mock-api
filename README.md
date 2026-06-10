@@ -136,21 +136,68 @@ async def main():
 
 asyncio.run(main())
 
-# 方式二：编程式配置
-from llm_mock_api import MockServerOptions
+# 方式二：编程式配置（展示全功能）
+from llm_mock_api import MockServer, MockServerOptions
+from llm_mock_api.types.rule import MatchObject
+from llm_mock_api.types.reply import ReplyObject, ToolCall
+import re
 
-opts = MockServerOptions(port=8002, log_level="info")
-server = MockServer(opts)
-server.when("hello").reply("world")
-asyncio.run(server.run_until_shutdown())
+async def main():
+    # 1. 启动服务器
+    opts = MockServerOptions(
+        port=8002,
+        host="127.0.0.1",
+        log_level="info",
+        default_latency=50,
+        default_chunk_size=50,
+    )
+    server = MockServer(opts)
+
+    # 2. 设置 fallback（无规则匹配时的默认回复）
+    server.fallback("Sorry, no matching rule. Try: hi, weather, joke, step")
+
+    # 3. 基础字符串匹配 + 文本回复
+    server.when("hello").reply("world!")
+
+    # 4. 正则匹配（忽略大小写）
+    server.when(re.compile(r"^echo", re.IGNORECASE)).reply(
+        "Echo mode active — message echoed back"
+    )
+
+    # 5. 对象匹配：按 model 字段筛选
+    server.when(MatchObject(message="model check", model="gpt-4")).reply(
+        "This reply only appears when the request model is gpt-4"
+    )
+
+    # 6. 结构化回复：text + reasoning（思考过程）
+    server.when("joke").reply(
+        ReplyObject(
+            text="Why did the developer go broke? Because he used up all his cache.",
+            reasoning="User asked for a joke — pick a programmer-related one.",
+        )
+    )
+
+    # 7. 结构化回复：工具调用
+    server.when("weather").reply(
+        ReplyObject(
+            text="Let me check the weather for you.",
+            tools=[ToolCall(name="get_weather", args={"location": "Beijing", "unit": "celsius"})],
+        )
+    )
+
+    # 8. 序列回复：每次请求推进到下一条，耗尽后重复最后一条
+    server.when("step").reply_sequence([
+        "Step 1: Initialize",
+        "Step 2: Process",
+        "Step 3: Done",
+    ])
+
+    # 9. 次数限制：仅匹配 1 次后自动失效
+    server.when("once").reply("This rule fires only once!").times(1)
+
+    # 10. 运行服务器
+    print(f"Server running at {server.url}")
+    await server.run_until_shutdown()
+
+asyncio.run(main())
 ```
-
-## 开发命令
-
-| 命令 | 说明 |
-|------|------|
-| `uv sync` | 安装依赖 |
-| `uv run pytest` | 运行测试 |
-| `uv run ruff format .` | 格式化代码 |
-| `uv run ruff check .` | 检查代码规范 |
-| `uv run mypy src/` | 类型检查 |
