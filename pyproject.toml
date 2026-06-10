@@ -41,3 +41,8 @@ python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 disable_error_code = ["empty-body"]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.3.0",
+]
