@@ -1,0 +1,10 @@
+{
+  "port": 8002,
+  "host": "127.0.0.1",
+  "log_level": "info",
+  "default_latency": 50,
+  "default_chunk_size": 100,
+  "fallback": "抱歉，我没有理解您的请求。可以换一种说法吗？",
+  "rules": "./rules",
+  "watch": true
+}

@@ -102,7 +102,9 @@ class TestMockServerOptions:
         assert parsed.default_latency == 5
         assert parsed.default_chunk_size == 50
         assert parsed.fallback == "sorry, no match"
-        assert parsed.rules == "./examples/rules.json5"
+        # rules 相对路径以 config 所在目录解析（而不是当前工作目录）
+        assert pathlib.Path(parsed.rules).is_absolute()
+        assert pathlib.Path(parsed.rules) == cfg.parent / "examples" / "rules.json5"
         assert parsed.watch is True
 
 
@@ -335,20 +337,23 @@ class TestWithTestClient:
     # --- 新增的关键测试 ---
 
     def test_stream_true_returns_sse(self) -> None:
-        """默认 stream=True（不传 stream 字段也生效）应返回 SSE 流。
+        """stream=True 应返回 SSE 流。
 
         关键点：Content-Type 包含 text/event-stream；body 包含
         'data: {...}\n\ndata: [... DONE ...]' 这种标准 SSE 载荷。
+
+        注意：不传递 stream 字段默认为非流式（与主流 LLM API 一致）。
         """
         server = MockServer()
         server.when("hi").reply("hello world")
         with TestClient(server._app) as client:
-            # 不传 stream 字段 → 路由默认为 SSE 流式
+            # 显式 stream=True → SSE 流式
             resp = client.post(
                 "/v1/chat/completions",
                 json={
                     "model": "gpt-4",
                     "messages": [{"role": "user", "content": "hi"}],
+                    "stream": True,
                 },
             )
             assert resp.status_code == 200

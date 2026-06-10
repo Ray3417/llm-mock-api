@@ -49,11 +49,14 @@ def test_request_meta_basic() -> None:
 
 
 def test_is_streaming_true_false() -> None:
-    """stream=True 返回 True，stream=False 返回 False — 两条核心路径。"""
+    """stream=True 返回 True，stream=False 返回 False — 两条核心路径。
+
+    缺失 stream 字段默认非流式（与 OpenAI / Anthropic 等主流 API 一致）。
+    """
     assert is_streaming({"stream": True}) is True
     assert is_streaming({"stream": False}) is False
-    # 缺失 stream 字段默认流式
-    assert is_streaming({"model": "gpt-4"}) is True
+    # 缺失 stream 字段 → 非流式
+    assert is_streaming({"model": "gpt-4"}) is False
 
 
 def test_build_mock_request_extracts_messages() -> None:

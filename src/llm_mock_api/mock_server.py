@@ -101,24 +101,31 @@ class MockServerOptions:
     def from_json_file(path: str) -> "MockServerOptions":
         """从 JSON 文件加载配置。
 
+        **相对路径以 config 文件所在目录为基准（而非当前工作目录），
+        确保 `llm-mock-api init` 生成的默认配置无论从哪里调用都能正确加载。
+
         示例（字段全可选；未写的字段走 MockServer 内部默认值）::
 
             {
                 "port": 8002,
-                "host": "127.0.0.1",
+                "host": "127.0.0.1,
                 "log_level": "info",
                 "default_latency": 0,
                 "default_chunk_size": 0,
                 "fallback": "sorry, I don't know",
-                "rules": "./examples/rules.json5",
+                "rules": "./rules.json5",
                 "watch": true
             }
         """
         import dataclasses
         import json
+        import pathlib
+
+        config_path = pathlib.Path(path).resolve()
+        config_dir = config_path.parent
 
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 data = json.load(f) or {}
         except FileNotFoundError:
             raise RuntimeError(f"Config file not found: {path}") from None
@@ -131,7 +138,16 @@ class MockServerOptions:
             )
 
         known = {f.name for f in dataclasses.fields(MockServerOptions)}
-        payload = {k: v for k, v in data.items() if k in known}
+        payload: dict[str, object] = {}
+        for k, v in data.items():
+            if k not in known:
+                continue  # 过滤未知字段
+            if k == "rules" and isinstance(v, str):
+                # rules 路径以 config 所在目录解析，确保 init 生成的相对路径无论从哪里启动都能正确加载
+                rules_path = pathlib.Path(v)
+                if not rules_path.is_absolute():
+                    v = str(config_dir / rules_path)
+            payload[k] = v
         return MockServerOptions(**payload)
 
 

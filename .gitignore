@@ -33,8 +33,5 @@ build/
 # 项目内部规范文件
 AGENTS.md
 
-# 本地配置文件
-config.json
-
 # 示例脚本
 start_server.py

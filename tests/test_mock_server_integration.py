@@ -1003,7 +1003,7 @@ class TestRuleConfigHttp:
 
     @pytest.mark.asyncio
     async def test_request_without_stream_key(self) -> None:
-        """请求体不含 stream 键（某些老客户端）：默认流式，也应当返回 200。"""
+        """请求体不含 stream 键：默认为非流式 JSON 响应（与主流 LLM API 一致）。"""
         async with MockServer() as server:
             server.when("x").reply("y")
             import httpx2
@@ -1014,11 +1014,10 @@ class TestRuleConfigHttp:
                     json={"model": "gpt-4", "messages": [{"role": "user", "content": "x"}]},
                 )
                 assert resp.status_code == 200
-                # 默认流式：content-type 为 text/event-stream
-                ct = resp.headers.get("content-type", "")
-                assert "text/event-stream" in ct
-                # SSE 数据里应包含 "y"
-                assert "y" in resp.text
+                # 新语义：无 stream 字段 → JSON 响应
+                body = resp.json()
+                assert "choices" in body
+                assert body["choices"][0]["message"]["content"] == "y"
 
     # ------------------------------------------------------------------
     # 规则顺序 —— 先匹配优先
