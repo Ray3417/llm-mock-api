@@ -59,11 +59,11 @@ class _PendingRule:
     def reply_sequence(self, entries: Sequence[SequenceEntry]) -> RuleHandle:
         """按顺序回复每个条目，遍历到末尾后持续返回最后一条。"""
         steps = normalise_sequence_entries(entries)
-        # 先注册一个空回复占位，随后修改 resolve 和 remaining
+        # 先注册一个空回复占位，随后修改 resolve
         rule = self._engine.add(self._match, "")
         result = create_sequence_resolver(steps, rule)
         rule.resolve = result.resolver
-        rule.remaining = result.entry_count
+        # 序列内部自己管理索引推进；remaining 保持为 inf 以便一直匹配
         return _RuleHandle(self._engine, rule)
 
 

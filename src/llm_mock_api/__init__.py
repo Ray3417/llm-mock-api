@@ -17,6 +17,7 @@ from .types.rule import (
     RuleHandle,
     RuleSummary,
 )
+from .mock_server import MockServer, MockServerOptions
 
 __all__ = [
     "FormatName",
@@ -37,4 +38,6 @@ __all__ = [
     "RuleSummary",
     "Handler",
     "Rule",
+    "MockServer",
+    "MockServerOptions",
 ]

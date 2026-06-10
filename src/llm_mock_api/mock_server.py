@@ -1,7 +1,7 @@
 """工作流示例：
 1. `server = MockServer({logLevel: "info"})` → 创建实例，初始化 RuleEngine + RuleBuilder + RequestHistory
 2. `server.when("hello").reply("Hi there!")` → 通过 RuleBuilder 注册规则
-3. `await server.start(8002)` → FastAPI 路由注册（chat-completions / responses）并启动 uvicorn
+3. `await server.start()` → FastAPI 路由注册（chat-completions / responses）并启动 uvicorn
 4. HTTP 请求到达 → route_handler 调用 engine.match() → 返回响应
 5. `await server.stop()` → 关闭 uvicorn 服务器
 6. `async with MockServer() as srv:` → 自动调用 start/stop 清理
@@ -61,44 +61,41 @@ class RuleAPI(Protocol):
 
 @dataclass(slots=True, kw_only=True)
 class MockServerOptions:
-    """构造 MockServer 时的选项，覆盖 cli 所有参数。
+    """MockServer 的唯一配置源。
 
-    与 TS `MockServerOptions` 保持语义一致：所有字段可选，未传则使用 MockServer 内部默认值。
-    dataclass 负责自动生成 __init__ / __repr__，避免手写 `__slots__ = ()` 与赋值不匹配的常见 bug。
+    所有默认值在此集中定义，MockServer.__init__ 只负责读取，不再做二次判定。
+    dataclass 自动生成 __init__ / __repr__，避免手写 `__slots__ = ()` 与赋值不匹配的 bug。
 
     字段分类：
 
     - 构造参数：`port` / `host` / `log_level` / `default_latency` / `default_chunk_size`
-      （进入 `MockServer.__init__` 时生效）
-    - 实例方法调用（构造后执行）：`rules` / `fallback`
-      （`MockServer.from_json_config()` 用 `load()` / `fallback()` 应用）
-    - 运行时行为（start 之后生效）：`watch`
-      （`MockServer.run_until_shutdown()` 用它打开 watcher）
+    - 构造后应用：`rules` / `fallback`（`from_json_config()` 负责）
+    - 运行时行为：`watch`（`run_until_shutdown()` 负责）
     """
 
-    port: int | None = None
-    """监听端口。传 `0` 让 OS 分配随机端口（测试中常用）。默认 `None`（MockServer 内部会再设为 8002）。"""
+    port: int = 0
+    """监听端口。`0` 让 OS 分配随机端口（默认，测试友好）。传具体值如 `8002` 固定端口。"""
 
-    host: str | None = None
-    """绑定的主机名。传 `"0.0.0.0"` 以监听所有网卡。默认 `None`（MockServer 内部会再设为 `"127.0.0.1"`）。"""
+    host: str = "127.0.0.1"
+    """绑定的主机名。传 `"0.0.0.0"` 以监听所有网卡。默认 `"127.0.0.1"`。"""
 
-    log_level: LogLevel | None = None
-    """日志级别。默认 `None`（MockServer 内部会再设为 `"none"`）。"""
+    log_level: LogLevel = "none"
+    """日志级别。默认 `"none"`（不输出）。"""
 
-    default_latency: int | None = None
-    """SSE chunk 之间的默认毫秒延迟。各规则可覆盖。默认 `None`（不延迟）。"""
+    default_latency: int = 0
+    """SSE chunk 之间的默认毫秒延迟。各规则可覆盖。默认 `0`（不延迟）。"""
 
-    default_chunk_size: int | None = None
-    """默认 SSE 文本分块大小（字符数）。各规则可覆盖。默认 `None`（不分块）。"""
+    default_chunk_size: int = 0
+    """默认 SSE 文本分块大小（字符数）。各规则可覆盖。默认 `0`（不分块）。"""
 
     fallback: str | None = None
-    """`--fallback`：无规则匹配时返回的默认回复。默认 `None`（使用内置 fallback 文案）。"""
+    """无规则匹配时返回的默认回复。默认 `None`（使用内置 fallback 文案）。"""
 
     rules: str | None = None
-    """`--rules`：json5 规则文件或目录的路径。默认 `None`（不加载）。"""
+    """json5 规则文件或目录的路径。默认 `None`（不预加载）。"""
 
     watch: bool = False
-    """`--watch`：是否监听 rules 路径的文件改动并自动 reload。默认 `False`。"""
+    """是否监听 rules 路径的文件改动并自动 reload。默认 `False`。"""
 
     @staticmethod
     def from_json_file(path: str) -> "MockServerOptions":
@@ -158,25 +155,23 @@ class MockServer:
     def __init__(self, options: MockServerOptions | None = None) -> None:
         opts = options or MockServerOptions()
 
-        # 字段默认值：未传的 host 取 "127.0.0.1"，未传的 port 取 8002（生产环境常用）
-        self._host: str = opts.host if opts.host is not None else "127.0.0.1"
-        self._default_port: int = opts.port if opts.port is not None else 8002
-        self._logger: Logger = Logger(opts.log_level if opts.log_level is not None else "none")
+        # 所有默认值已在 MockServerOptions 中集中定义，此处直接读取
+        self._host: str = opts.host
+        self._default_port: int = opts.port
+        self._logger: Logger = Logger(opts.log_level)
 
-        # 只合并显式传入的默认选项（与 TS 的 `{ ...(latency !== undefined && { latency }), ... }` 等价）
-        fields: dict[str, int] = {}
-        if opts.default_latency is not None:
-            fields["latency"] = opts.default_latency
-        if opts.default_chunk_size is not None:
-            fields["chunk_size"] = opts.default_chunk_size
-        self._default_options: ReplyOptions = ReplyOptions(**fields)
+        # 直接构造 ReplyOptions（默认值已是 0，不需要条件判断）
+        self._default_options: ReplyOptions = ReplyOptions(
+            latency=opts.default_latency,
+            chunk_size=opts.default_chunk_size,
+        )
 
         self._engine: RuleEngine = RuleEngine()
         self._rules: RuleBuilder = RuleBuilder(self._engine)
         self._history: RequestHistory = RequestHistory()
         self._fallback_reply: Reply = "Mock server: no matching rule."
         self._listening: bool = False
-        self._watch_path: str | None = None  # from_json_config 记录的 rules 路径，供 watch 模式使用
+        self._watch_path: str | None = None  # from_json_config 记录的 rules 路径
 
         # Fastify <-> FastAPI 对应：Fastify({ logger: false })
         self._app: FastAPI = FastAPI()
@@ -276,25 +271,14 @@ class MockServer:
 
     # --- 生命周期 ---
 
-    async def start(self, port: int | None = None) -> None:
-        """启动 HTTP 服务器。
-
-        参数 `port` 优先级：显式传入 > MockServerOptions.port > 0（OS 随机分配）。
-        默认使用随机端口，避免与其他服务冲突；在上下文管理器里也用随机端口。
-        """
+    async def start(self) -> None:
+        """启动 HTTP 服务器。端口由 MockServerOptions.port 决定（默认 0 = 随机分配）。"""
         if self._listening:
             raise RuntimeError("Server is already running.")
-        if port is not None:
-            listen_port = port
-        elif self._default_port != 8002:
-            listen_port = self._default_port
-        else:
-            # 用户没在 options 里改 port → 用随机端口
-            listen_port = 0
         config = uvicorn.Config(
             self._app,
             host=self._host,
-            port=listen_port,
+            port=self._default_port,
             log_level="error",
         )
         self._server = uvicorn.Server(config)
@@ -325,8 +309,8 @@ class MockServer:
     # --- async context manager（对应 TS: Symbol.asyncDispose）---
 
     async def __aenter__(self) -> "MockServer":
-        """进入上下文时自动调用 start(port=0)（随机端口，避免与其他服务冲突）。"""
-        await self.start(port=0)
+        """进入上下文时自动调用 start()（默认随机端口）。"""
+        await self.start()
         return self
 
     async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:

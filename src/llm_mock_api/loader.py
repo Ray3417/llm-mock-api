@@ -199,9 +199,9 @@ def _add_sequence_rule(
             raise ValueError(f"Invalid sequence entry in {file_path}: expected string or object")
 
     rule = engine.add(match, "")
-    resolver, entry_count = create_sequence_resolver(steps, rule)
-    rule.resolve = resolver
-    rule.remaining = entry_count
+    result = create_sequence_resolver(steps, rule)
+    rule.resolve = result.resolver
+    # 序列内部自己管理索引推进；remaining 保持为 inf 以便一直匹配
 
 
 # ---------------------------------------------------------------------------
