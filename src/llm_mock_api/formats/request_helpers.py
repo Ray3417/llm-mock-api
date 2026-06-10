@@ -36,7 +36,8 @@ def is_streaming(body: Any) -> bool:
     """检查请求体是否要求流式响应。
 
     语义：仅当 `stream` 字段显式为 `False` 时返回 False；
-    其他所有情况（缺失、True、非布尔值）默认视为流式。
+    其他所有情况（缺失、True、非布尔值）默认视为流式，
+    与 LLM API 的普遍默认行为一致。
     """
     if not isinstance(body, Mapping):
         return True
@@ -62,7 +63,7 @@ def build_mock_request(
     return MockRequest(
         format=format,
         model=body.get("model") or default_model,
-        streaming=body.get("stream") is not False,
+        streaming=body.get("stream") is True,
         messages=messages,
         last_message=user_messages[-1].content if user_messages else "",
         system_message=next((m.content for m in messages if m.role == "system"), ""),

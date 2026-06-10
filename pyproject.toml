@@ -12,13 +12,8 @@ dependencies = [
     "json5>=0.9.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "ruff>=0.1.0",
-    "mypy>=1.8.0",
-]
+[project.scripts]
+llm-mock-api = "llm_mock_api.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -45,4 +40,8 @@ disable_error_code = ["empty-body"]
 [dependency-groups]
 dev = [
     "httpx2>=2.3.0",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
 ]

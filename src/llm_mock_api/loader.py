@@ -4,19 +4,13 @@
      { when: "hello", reply: "Hi!" },
      { when: "step", replies: [{ reply: "First" }, { reply: "Second", latency: 100 }] },
    ]
-2. Python 处理器文件 `handlers/greeting.py`:
-   class _Handler:
-       def match(self, req): return "echo" in req.last_message
-       def respond(self, req): return f"Echo: {req.last_message}"
-   default = _Handler()
-3. `load_rules_from_path("rules/", ctx)` 读取并注册
-4. 后续请求时 `rule_engine.match(req)` 找到匹配规则并返回回复
+2. `load_rules_from_path("rules/", ctx)` 读取并注册
+3. 后续请求时 `rule_engine.match(req)` 找到匹配规则并返回回复
 """
 
 from __future__ import annotations
 
 import asyncio
-import importlib.util
 import pathlib
 import re
 from collections.abc import Awaitable, Callable
@@ -27,7 +21,7 @@ import json5
 
 from .rule_engine import RuleEngine, _SequenceStep, create_sequence_resolver
 from .types.reply import Reply, ReplyObject, ReplyOptions, ToolCall
-from .types.rule import Handler, Match, MatchObject
+from .types.rule import Match, MatchObject
 
 # ---------------------------------------------------------------------------
 # JSON5 原始类型（加载时的中间形态，验证后转换为正式类型）
@@ -199,9 +193,9 @@ def _add_sequence_rule(
             raise ValueError(f"Invalid sequence entry in {file_path}: expected string or object")
 
     rule = engine.add(match, "")
-    resolver, entry_count = create_sequence_resolver(steps, rule)
-    rule.resolve = resolver
-    rule.remaining = entry_count
+    result = create_sequence_resolver(steps, rule)
+    rule.resolve = result.resolver
+    # 序列内部自己管理索引推进；remaining 保持为 inf 以便一直匹配
 
 
 # ---------------------------------------------------------------------------
@@ -275,63 +269,6 @@ async def _load_json5_file(file_path: str, ctx: LoadContext) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Python 处理器文件加载
-# ---------------------------------------------------------------------------
-
-
-async def _load_handler_file(file_path: str, ctx: LoadContext) -> None:
-    """动态加载一个 Python 处理器文件。
-
-    文件应定义 `default = <Handler 对象或列表>`，可选 `fallback`。
-    """
-
-    def _load_module() -> object:
-        module_name = f"_llm_mock_api_handler_{pathlib.Path(file_path).stem}"
-        spec = importlib.util.spec_from_file_location(module_name, file_path)
-        if spec is None or spec.loader is None:
-            raise ValueError(f"Cannot create module spec for {file_path}")
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        return mod
-
-    mod = await asyncio.to_thread(_load_module)
-
-    if not hasattr(mod, "default"):
-        raise ValueError(
-            f"Invalid handler file {file_path}. Expected `default` export with Handler or list[Handler].",
-        )
-
-    default_val = getattr(mod, "default")
-    handlers: list[Handler]
-    if isinstance(default_val, list):
-        for h in default_val:
-            if not isinstance(h, Handler):
-                raise ValueError(
-                    f"Invalid handler file {file_path}: `default` list contains non-Handler item"
-                )
-        handlers = list(default_val)
-    elif isinstance(default_val, Handler):
-        handlers = [default_val]
-    else:
-        raise ValueError(
-            f"Invalid handler file {file_path}: `default` must be a Handler or list[Handler]",
-        )
-
-    # 可选 fallback
-    if hasattr(mod, "fallback") and ctx.set_fallback is not None:
-        fb = getattr(mod, "fallback")
-        if isinstance(fb, (str, dict)):
-            ctx.set_fallback(_parse_reply(fb, file_path=file_path))
-
-    for handler in handlers:
-        ctx.engine.add_handler(
-            handler.match,
-            handler.respond,
-            f"(handler: {file_path})",
-        )
-
-
-# ---------------------------------------------------------------------------
 # 文件扩展名 → loader 映射
 # ---------------------------------------------------------------------------
 
@@ -340,7 +277,6 @@ type _FileLoader = Callable[[str, LoadContext], Awaitable[None]]
 _LOADERS: dict[str, _FileLoader] = {
     ".json5": _load_json5_file,
     ".json": _load_json5_file,
-    ".py": _load_handler_file,
 }
 
 

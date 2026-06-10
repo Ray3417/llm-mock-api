@@ -40,10 +40,10 @@ class TestMockServerOptions:
     """验证 MockServerOptions 的语义：字段默认值、JSON 加载行为。"""
 
     def test_mock_server_applies_sensible_defaults(self) -> None:
-        """未传选项时，MockServer 应使用 127.0.0.1 + 默认端口 8002。"""
+        """未传选项时，MockServer 应使用 127.0.0.1 + 随机端口（测试友好）。"""
         server = MockServer()
         assert server._host == "127.0.0.1"
-        assert server._default_port == 8002
+        assert server._default_port == 0
 
     def test_host_0_0_0_0_is_respected(self) -> None:
         """显式传 host="0.0.0.0" 时，MockServer 应绑定到所有接口。"""
@@ -51,17 +51,17 @@ class TestMockServerOptions:
         assert server._host == "0.0.0.0"
 
     def test_load_from_json_file(self, tmp_path) -> None:
-        """从 JSON 配置文件加载选项；未写的字段保持 None，由 MockServer 应用默认值。"""
+        """从 JSON 配置文件加载选项；未写的字段使用 MockServerOptions 的 dataclass 默认值。"""
         cfg = tmp_path / "config.json"
         cfg.write_text(json.dumps({"port": 8002, "host": "127.0.0.1"}), encoding="utf-8")
 
         opts = MockServerOptions.from_json_file(str(cfg))
         assert opts.port == 8002
         assert opts.host == "127.0.0.1"
-        # 未写字段 → None，由 MockServer 内部再回退
-        assert opts.log_level is None
-        assert opts.default_latency is None
-        assert opts.default_chunk_size is None
+        # 未写字段 → 使用 MockServerOptions 的 dataclass 默认值
+        assert opts.log_level == "none"
+        assert opts.default_latency == 0
+        assert opts.default_chunk_size == 0
 
     def test_json_missing_file_raises_runtime_error(self, tmp_path) -> None:
         """不存在的文件 → RuntimeError（带路径提示）。"""
@@ -151,7 +151,7 @@ class TestFromJsonConfig:
         cfg.write_text("{}", encoding="utf-8")
         server = asyncio.run(MockServer.from_json_config(str(cfg)))
         assert server._host == "127.0.0.1"
-        assert server._default_port == 8002
+        assert server._default_port == 0
 
     def test_watch_path_recorded_when_watch_true_and_rules_present(self, tmp_path) -> None:
         """watch: true + rules 存在 → server._watch_path 应被设置，供 run_until_shutdown 使用。"""

@@ -111,34 +111,6 @@ class RuleSummary:
     """剩余匹配次数。默认为 `float('inf')`（无限）。"""
 
 
-@runtime_checkable
-class Handler(Protocol):
-    """
-    处理器文件的默认导出结构。可以导出单个处理器或处理器数组。
-
-    示例：
-        from llm_mock_api.types.rule import Handler
-        from llm_mock_api.types.request import MockRequest
-
-        class MyHandler:
-            def match(self, req: MockRequest) -> bool:
-                return "echo" in req.last_message
-
-            def respond(self, req: MockRequest) -> Reply:
-                return f"Echo: {req.last_message}"
-
-        handler: Handler = MyHandler()
-    """
-
-    def match(self, req: MockRequest) -> bool:
-        """返回 `true` 如果此处理器应响应该请求。"""
-        ...
-
-    def respond(self, req: MockRequest) -> Reply | Awaitable[Reply]:
-        """为匹配的请求生成回复。可以是异步的。"""
-        ...
-
-
 @dataclass(slots=True)
 class Rule:
     description: str
