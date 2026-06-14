@@ -222,6 +222,7 @@ class TestMockServerUnit:
         assert server.routes == [
             "/v1/chat/completions",
             "/v1/responses",
+            "/v1/messages",
         ]
         assert server._listening is False
 

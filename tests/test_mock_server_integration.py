@@ -243,7 +243,7 @@ class TestCliInitCommand:
         data = json5.loads(rules_path.read_text(encoding="utf-8"))
         assert isinstance(data, dict), "rules.json5 顶层必须是对象"
         assert isinstance(data["rules"], list), "rules 必须是数组"
-        assert len(data["rules"]) == 15, f"应有 15 条规则，实际 {len(data['rules'])}"
+        assert len(data["rules"]) == 16, f"应有 16 条规则，实际 {len(data['rules'])}"
         assert isinstance(data["templates"], dict), "应有 templates 对象"
         assert "weather_tool" in data["templates"]
         assert "cant_answer" in data["templates"]

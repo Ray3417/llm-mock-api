@@ -76,7 +76,7 @@ def _compile_matcher(match: Match) -> Callable[[MockRequest], bool]:
             return False
         if obj.tool_name is not None and obj.tool_name not in req.tool_names:
             return False
-        if obj.tool_call_id is not None and req.last_tool_call_id != obj.tool_call_id:
+        if obj.tool_call_id and req.last_tool_call_id != obj.tool_call_id:
             return False
         if obj.predicate is not None and not obj.predicate(req):
             return False

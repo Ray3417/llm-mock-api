@@ -12,11 +12,12 @@ from __future__ import annotations
 import asyncio
 import signal as _signal
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
 import uvicorn
 from fastapi import FastAPI
 
+from .formats.anthropic import anthropic_format
 from .formats.openai.chat_completions import chat_completions_format
 from .formats.openai.responses import responses_format
 from .formats.types import Format
@@ -138,7 +139,7 @@ class MockServerOptions:
             )
 
         known = {f.name for f in dataclasses.fields(MockServerOptions)}
-        payload: dict[str, object] = {}
+        payload: dict[str, Any] = {}
         for k, v in data.items():
             if k not in known:
                 continue  # 过滤未知字段
@@ -199,10 +200,10 @@ class MockServer:
         self.when_tool_result = self._rules.when_tool_result
         self.next_error = self._rules.next_error
 
-        # 当前已实现的 format（anthropic format 暂未实现，待后续补充）
         self._formats: list[Format] = [
-            chat_completions_format,
-            responses_format,
+            cast(Format, chat_completions_format),
+            cast(Format, responses_format),
+            cast(Format, anthropic_format),
         ]
 
         # 组装路由处理器依赖并注册路由
@@ -402,7 +403,7 @@ class MockServer:
                     try:
                         loop.add_signal_handler(
                             sig_value,
-                            lambda s=sig_name: asyncio.create_task(self._on_signal_shutdown(s)),
+                            lambda s=sig_name: asyncio.create_task(self._on_signal_shutdown(s)),  # type: ignore[misc]
                         )
                     except NotImplementedError:
                         # Windows 某些事件循环不支持 add_signal_handler；降级：仅挂起等待 stop()

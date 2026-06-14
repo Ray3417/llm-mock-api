@@ -66,20 +66,21 @@ llm-mock-api init --force
 
 | 关键词 | 演示功能 | 返回内容 |
 |--------|---------|---------|
-| `hi` / `hello` / `你好` | 基础字符串匹配 | 问候文本回复 |
-| `echo hello` | 正则匹配（`/^echo (.*)$/i`） | echo 模式提示 |
-| `model check`（模型设为 gpt-4） | 对象匹配（按 model 筛选） | 模型条件命中提示 |
-| `openai only`（请求 `/v1/chat/completions`） | 对象匹配（按 format 筛选） | 路由条件命中提示 |
-| `joke` | 结构化回复（`text` + `reasoning`） | 带思考过程的笑话 |
-| `weather` | 模板引用 + 工具调用 | `$weather_tool` 模板 → get_weather 工具 |
-| `multi tool` | 多工具调用 | 两个工具调用并行 |
-| `step` | 序列回复（replies 数组） | 依次返回 Step 1/2/3 |
-| `slow step` | 序列回复 + 自定义 latency/chunkSize | 带节奏的分步回复 |
-| `once` | 次数限制 `times: 1` | 仅第一次匹配 |
-| `three times` | 次数限制 `times: 3` | 最多匹配 3 次 |
-| `long` | SSE 流式输出（长文本分块） | 长文本分块发送 |
-| `unknown` | 模板引用（`$cant_answer`） | 标准拒绝模板 |
-| （未匹配） | fallback | 友好的 fallback 提示 |
+| `hi` / `hello` / `你好` | 基础字符串匹配 | 英文：`Hello! 👋 This is llm-mock-api. How can I help you today?`；中文：`你好！我是 llm-mock-api，一个用于测试的 Mock LLM 服务器。` |
+| `echo test 456` | 正则匹配（`/^echo (.*)$/i`） | `Echo mode active. Any message starting with 'echo' triggers this.`（提示：消息中不能含 hi/hello，否则会被前序字符串规则先匹配） |
+| `model check`（模型设为 gpt-4） | 对象匹配（按 model 筛选） | `Detected GPT-4 model request (object match by model field).` |
+| `openai only`（请求 `/v1/chat/completions`） | 对象匹配（按 format 筛选） | `This reply only appears on the OpenAI /v1/chat/completions route.`（仅 Chat Completions 路由生效） |
+| `joke` | 结构化回复（`text` + `reasoning`，仅 Responses 格式返回 reasoning 字段） | reasoning: `User wants a programmer joke. Make it short and relatable.`；text: `Why did the developer go broke? Because he used up all his cache.`（Chat Completions 仅返回 text 部分） |
+| `weather` | 模板引用 + 工具调用（`$weather_tool`） | content: `Looking up the weather for you...`；tool_call: `get_weather(location="Beijing", unit="celsius")` |
+| `multi tool` | 多工具调用 | content: `I need to run several tools to answer this.`；tool_calls: `search_db(query="users")` + `send_email(to="admin@example.com")` |
+| `tool result` | 对象匹配（`when.tool_call_id`，检测客户端回传工具执行结果） | 发送含 `tool_call_id` 的消息时返回：`Tool result received and processed.`（必须在工具调用回复之后的下一条请求中才会命中） |
+| `step` | 序列回复（replies 数组） | 第1次：`Step 1/3 — Initializing...`；第2次：`Step 2/3 — Processing data...`；第3次：`Step 3/3 — Done!` |
+| `slow step` | 序列回复 + 自定义 latency/chunkSize | `Fast response (no delay).`（0ms delay，无分块）→ `Medium response (200ms delay, chunked).`（200ms，20 char/chunk）→ `Slow response (500ms delay, chunked).`（500ms，10 char/chunk） |
+| `once` | 次数限制 `times: 1` | 第1次：`This rule triggers only ONCE — subsequent requests fall through.`；第2次起：fallback |
+| `three times` | 次数限制 `times: 3` | 前3次均返回：`This rule triggers up to 3 times.`；第4次起：fallback |
+| `long` | SSE 流式输出（长文本分块） | `This is a longer response to demonstrate SSE streaming behavior. When you request with stream=true, the server splits this text into chunks and sends them one by one with a small delay between each chunk. You can tune default_latency (milliseconds between chunks) and default_chunk_size (characters per chunk) in config.json per server, or override at the individual reply level inside a rule. Try it out: send 'long' with streaming enabled and watch the chunks arrive in real time.`（分块节奏由 `config.json` 中的 `default_latency` / `default_chunk_size` 控制） |
+| `unknown` | 模板引用（`$cant_answer$`，仅 Responses 格式返回 reasoning 字段） | reasoning: `User asked something outside my scope.`；text: `Sorry, I can't help with that right now.`（Chat Completions 仅返回 text 部分） |
+| （未匹配） | fallback | `Sorry, I don't understand. Try: hi, weather, joke, step, or echo.` |
 
 ### `validate` — 检查规则文件语法
 

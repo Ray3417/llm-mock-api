@@ -86,11 +86,33 @@ def _compile_match(when: _Json5MatchRaw, *, file_path: str = "") -> Match:
                 f"Expected one of: openai, anthropic, responses",
             )
 
+    # tool_name（字符串精确匹配）
+    tool_name_val = when.get("tool_name")
+    parsed_tool_name: str | None = None
+    if tool_name_val is not None:
+        if not isinstance(tool_name_val, str) or not tool_name_val:
+            raise ValueError(
+                f"Invalid 'tool_name' in {file_path or '<unknown>'}: expected non-empty string"
+            )
+        parsed_tool_name = tool_name_val
+
+    # tool_call_id（严格字符串，有值就表示"匹配任何带 tool result 的请求"）
+    tool_call_id_val = when.get("tool_call_id")
+    parsed_tool_call_id: str | None = None
+    if tool_call_id_val is not None:
+        if not isinstance(tool_call_id_val, str) or not tool_call_id_val:
+            raise ValueError(
+                f"Invalid 'tool_call_id' in {file_path or '<unknown>'}: expected non-empty string"
+            )
+        parsed_tool_call_id = tool_call_id_val
+
     return MatchObject(
         message=_regex_or_none(when.get("message")),
         model=_regex_or_none(when.get("model")),
         system=_regex_or_none(when.get("system")),
         format=cast(_FormatName, fmt),
+        tool_name=parsed_tool_name,
+        tool_call_id=parsed_tool_call_id,
     )
 
 
