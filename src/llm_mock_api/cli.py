@@ -250,13 +250,7 @@ _EXAMPLE_RULES = """// =========================================================
   // 规则列表（按顺序匹配）
   // -------------------------------------------------------------------------
   rules: [
-    // [0] 工具结果：当请求携带 tool result（last_tool_call_id 存在）时，返回固定文本
-    {
-      when: { tool_call_id: "x" },
-      reply: "Tool result received and processed.",
-    },
-
-    // [1] 基础：字符串匹配 → 文本回复
+    // [0] 基础：字符串匹配 → 文本回复
     {
       when: "hi",
       reply: "Hello! 👋 This is llm-mock-api. How can I help you today?",
@@ -270,13 +264,13 @@ _EXAMPLE_RULES = """// =========================================================
       reply: "你好！我是 llm-mock-api，一个用于测试的 Mock LLM 服务器。",
     },
 
-    // [2] 正则匹配：匹配 "echo xxx"，返回 echo 内容
+    // [1] 正则匹配：匹配 "echo xxx"，返回 echo 内容
     {
       when: "/^echo (.*)$/i",
       reply: "Echo mode active. Any message starting with 'echo' triggers this.",
     },
 
-    // [3] 对象匹配：按请求中的模型名筛选
+    // [2] 对象匹配：按请求中的模型名筛选
     {
       when: {
         message: "model check",
@@ -285,7 +279,7 @@ _EXAMPLE_RULES = """// =========================================================
       reply: "Detected GPT-4 model request (object match by model field).",
     },
 
-    // [4] 对象匹配：按 API 格式筛选（仅 OpenAI chat completions 路由生效）
+    // [3] 对象匹配：按 API 格式筛选（仅 OpenAI chat completions 路由生效）
     {
       when: {
         message: "openai only",
@@ -294,7 +288,7 @@ _EXAMPLE_RULES = """// =========================================================
       reply: "This reply only appears on the OpenAI /v1/chat/completions route.",
     },
 
-    // [5] 结构化回复：text + reasoning（思考过程）
+    // [4] 结构化回复：text + reasoning（思考过程）
     {
       when: "joke",
       reply: {
@@ -303,13 +297,13 @@ _EXAMPLE_RULES = """// =========================================================
       },
     },
 
-    // [6] 结构化回复：工具调用（引用上方 templates.weather_tool）
+    // [5] 结构化回复：工具调用（引用上方 templates.weather_tool）
     {
       when: "weather",
       reply: "$weather_tool",
     },
 
-    // [7] 结构化回复：多个 tool calls
+    // [6] 结构化回复：多个 tool calls
     {
       when: "multi tool",
       reply: {
@@ -321,7 +315,7 @@ _EXAMPLE_RULES = """// =========================================================
       },
     },
 
-    // [8] 序列回复：同一关键词每次请求返回下一条
+    // [7] 序列回复：同一关键词每次请求返回下一条
     {
       when: "step",
       replies: [
@@ -331,7 +325,7 @@ _EXAMPLE_RULES = """// =========================================================
       ],
     },
 
-    // [9] 序列回复：带每步自定义 latency / chunkSize（模拟流式节奏）
+    // [8] 序列回复：带每步自定义 latency / chunkSize（模拟流式节奏）
     {
       when: "slow step",
       replies: [
@@ -341,27 +335,27 @@ _EXAMPLE_RULES = """// =========================================================
       ],
     },
 
-    // [10] 次数限制：仅匹配 1 次后自动失效
+    // [9] 次数限制：仅匹配 1 次后自动失效
     {
       when: "once",
       reply: "This rule triggers only ONCE — subsequent requests fall through.",
       times: 1,
     },
 
-    // [11] 次数限制：仅匹配 3 次
+    // [10] 次数限制：仅匹配 3 次
     {
       when: "three times",
       reply: "This rule triggers up to 3 times.",
       times: 3,
     },
 
-    // [12] 长文本：测试 SSE 流式输出（分块发送）
+    // [11] 长文本：测试 SSE 流式输出（分块发送）
     {
       when: "long",
       reply: "This is a longer response to demonstrate SSE streaming behavior. When you request with stream=true, the server splits this text into chunks and sends them one by one with a small delay between each chunk. You can tune default_latency (milliseconds between chunks) and default_chunk_size (characters per chunk) in config.json per server, or override at the individual reply level inside a rule. Try it out: send 'long' with streaming enabled and watch the chunks arrive in real time.",
     },
 
-    // [13] 模板引用：回复复用 templates.cant_answer
+    // [12] 模板引用：回复复用 templates.cant_answer
     {
       when: "unknown",
       reply: "$cant_answer",

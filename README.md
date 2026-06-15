@@ -73,7 +73,6 @@ llm-mock-api init --force
 | `joke` | 结构化回复（`text` + `reasoning`，仅 Responses 格式返回 reasoning 字段） | reasoning: `User wants a programmer joke. Make it short and relatable.`；text: `Why did the developer go broke? Because he used up all his cache.`（Chat Completions 仅返回 text 部分） |
 | `weather` | 模板引用 + 工具调用（`$weather_tool`） | content: `Looking up the weather for you...`；tool_call: `get_weather(location="Beijing", unit="celsius")` |
 | `multi tool` | 多工具调用 | content: `I need to run several tools to answer this.`；tool_calls: `search_db(query="users")` + `send_email(to="admin@example.com")` |
-| `tool result` | 对象匹配（`when.tool_call_id`，检测客户端回传工具执行结果） | 发送含 `tool_call_id` 的消息时返回：`Tool result received and processed.`（必须在工具调用回复之后的下一条请求中才会命中） |
 | `step` | 序列回复（replies 数组） | 第1次：`Step 1/3 — Initializing...`；第2次：`Step 2/3 — Processing data...`；第3次：`Step 3/3 — Done!` |
 | `slow step` | 序列回复 + 自定义 latency/chunkSize | `Fast response (no delay).`（0ms delay，无分块）→ `Medium response (200ms delay, chunked).`（200ms，20 char/chunk）→ `Slow response (500ms delay, chunked).`（500ms，10 char/chunk） |
 | `once` | 次数限制 `times: 1` | 第1次：`This rule triggers only ONCE — subsequent requests fall through.`；第2次起：fallback |

@@ -35,3 +35,6 @@ AGENTS.md
 
 # 示例脚本
 start_server.py
+
+# 本地测试目录
+default_config_face_user/
