@@ -1,12 +1,23 @@
 # llm-mock-api
 
-一个用于测试的 Mock LLM 服务器，支持 OpenAI、Anthropic 和 Responses API 格式。
+> 本项目是 [theblixguy/llm-mock-server](https://github.com/theblixguy/llm-mock-server) 的 Python 重写版本，主要用于本人学习。  
+> 目前功能版本略低于原项目，后续会逐步跟进并对齐上游更新。
+
+一个用于测试的 Mock LLM 服务器，支持 OpenAI（v1/Responses；v1/chat/completions ）与 Anthropic 格式。
 
 ## 快速开始
 
 ```bash
-uv sync
+# 安装依赖
+uv pip install llm-mock-api
+
+# 在当前目录生成 config.json 和 rules.json5
+llm-mock-api init
+
+# 启动服务
+llm-mock-api start
 ```
+
 
 ## CLI 命令
 
@@ -59,10 +70,21 @@ llm-mock-api init --force
 ```
 
 生成的示例：
-- `config.json` — 服务器配置（端口 8002、SSE 流式输出、watch 自动重载）
-- `rules.json5` — 15 条开箱即用的演示规则（覆盖全部核心功能）
+- `config.json` — 服务器配置
 
-**即开即用：启动服务器后，你可以直接发送以下关键词测试**（详见下方"默认规则速查"章节）：
+| 字段 | 说明 |
+|------|------|
+| `port` / `host` | 监听地址，默认 `127.0.0.1:8002` |
+| `log_level` | 日志级别（`none` / `error` / `info` / `debug`） |
+| `default_latency` | SSE 流式输出的每块延迟（毫秒），默认 50 |
+| `default_chunk_size` | SSE 流式输出的每块字符数，默认 50 |
+| `fallback` | 无规则匹配时的默认回复 |
+| `rules` | 规则文件路径（支持 `.json5` / `.json` / `.py`） |
+| `watch` | 监听 `rules` 文件改动自动热重载 |
+
+- `rules.json5` — 15 条开箱即用的演示规则
+
+**即开即用：启动服务器后，你可以直接发送以下关键词测试**（详见下方"默认规则速查"）：
 
 | 关键词 | 演示功能 | 返回内容 |
 |--------|---------|---------|
@@ -77,7 +99,7 @@ llm-mock-api init --force
 | `slow step` | 序列回复 + 自定义 latency/chunkSize | `Fast response (no delay).`（0ms delay，无分块）→ `Medium response (200ms delay, chunked).`（200ms，20 char/chunk）→ `Slow response (500ms delay, chunked).`（500ms，10 char/chunk） |
 | `once` | 次数限制 `times: 1` | 第1次：`This rule triggers only ONCE — subsequent requests fall through.`；第2次起：fallback |
 | `three times` | 次数限制 `times: 3` | 前3次均返回：`This rule triggers up to 3 times.`；第4次起：fallback |
-| `long` | SSE 流式输出（长文本分块） | `This is a longer response to demonstrate SSE streaming behavior. When you request with stream=true, the server splits this text into chunks and sends them one by one with a small delay between each chunk. You can tune default_latency (milliseconds between chunks) and default_chunk_size (characters per chunk) in config.json per server, or override at the individual reply level inside a rule. Try it out: send 'long' with streaming enabled and watch the chunks arrive in real time.`（分块节奏由 `config.json` 中的 `default_latency` / `default_chunk_size` 控制） |
+| `long` | SSE 流式输出（长文本分块） | `This is a longer response...`（分块节奏由 `config.json` 中的 `default_latency` / `default_chunk_size` 控制） |
 | `unknown` | 模板引用（`$cant_answer$`，仅 Responses 格式返回 reasoning 字段） | reasoning: `User asked something outside my scope.`；text: `Sorry, I can't help with that right now.`（Chat Completions 仅返回 text 部分） |
 | （未匹配） | fallback | `Sorry, I don't understand. Try: hi, weather, joke, step, or echo.` |
 
@@ -96,32 +118,6 @@ llm-mock-api validate ./rules/
 - 根节点是否为对象
 - 是否包含 `rules` 数组
 
-## 配置文件 `config.json`
-
-这是 `llm-mock-api init` 生成的默认配置（已调好即开即用）：
-
-```json
-{
-  "port": 8002,
-  "host": "127.0.0.1",
-  "log_level": "info",
-  "default_latency": 50,
-  "default_chunk_size": 50,
-  "fallback": "Sorry, I don't understand your request. Try saying: hi, weather, joke, step, or echo.",
-  "rules": "./rules.json5",
-  "watch": true
-}
-```
-
-| 字段 | 说明 |
-|------|------|
-| `port` / `host` | 监听地址，默认 `127.0.0.1:8002` |
-| `log_level` | 日志级别（`none` / `error` / `info` / `debug`） |
-| `default_latency` | SSE 流式输出的每块延迟（毫秒），默认 50 |
-| `default_chunk_size` | SSE 流式输出的每块字符数，默认 50 |
-| `fallback` | 无规则匹配时的默认回复 |
-| `rules` | 规则文件路径（支持 `.json5` / `.json` / `.py`） |
-| `watch` | 监听 `rules` 文件改动自动热重载 |
 
 ## Python API
 
@@ -201,3 +197,43 @@ async def main():
 
 asyncio.run(main())
 ```
+
+## 安全
+
+这是一个测试工具，不是生产服务。它被设计为在本地或 CI 中运行，加载你自己编写的规则文件。以下几点需要注意。
+
+### 规则文件会执行代码
+
+当你在 CLI 中传入 `.py` 规则文件时，它们会通过 Python 的动态导入机制加载，并与你的主进程具有相同的权限。仅加载你信任的文件。
+
+### JSON5 规则文件仅为数据
+
+JSON5 规则文件在加载时会通过 Pydantic 进行数据验证（相比原项目的 Zod，校验策略较为宽松），且永远不会执行代码。规则文件中的正则模式通过 Python 的 `re.compile()` 编译，本身是安全的，但如果你编写类似 `^(a+)+$` 这样的病态模式，可能会导致匹配挂起。请保持模式简洁。
+
+### 请求限制
+
+FastAPI 默认**不启用**请求体大小限制和速率限制。如果你需要将此服务部署到公共服务器上，强烈建议在前方使用反向代理（如 **Nginx / Traefik / Caddy**）来处理请求上限与访问控制。**我们更建议仅在本地使用**。
+
+## 许可证
+
+MIT License
+
+Copyright (c) 2026 Ray3417
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
