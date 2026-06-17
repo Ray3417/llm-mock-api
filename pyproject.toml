@@ -3,7 +3,22 @@ name = "llm-mock-api"
 version = "0.1.0"
 description = "一个用于测试的 Mock LLM 服务器，支持 OpenAI、Anthropic 和 Responses API 格式"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
+authors = [
+    { name = "Ray3417" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+]
 dependencies = [
     "fastapi>=0.100.0",
     "uvicorn[standard]>=0.23.0",
@@ -11,6 +26,11 @@ dependencies = [
     "typing-extensions>=4.15.0",
     "json5>=0.9.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Ray3417/llm-mock-api"
+Repository = "https://github.com/Ray3417/llm-mock-api"
+Changelog = "https://github.com/Ray3417/llm-mock-api/blob/main/CHANGELOG.md"
 
 [project.scripts]
 llm-mock-api = "llm_mock_api.cli:main"
