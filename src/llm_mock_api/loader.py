@@ -15,22 +15,22 @@ import pathlib
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 import json5
 
 from .rule_engine import RuleEngine, _SequenceStep, create_sequence_resolver
 from .types.reply import Reply, ReplyObject, ReplyOptions, ToolCall
+from .types.request import FormatName
 from .types.rule import Match, MatchObject
 
 # ---------------------------------------------------------------------------
 # JSON5 原始类型（加载时的中间形态，验证后转换为正式类型）
 # ---------------------------------------------------------------------------
 
-type _Json5MatchRaw = str | dict[str, Any]
-type _Json5ReplyRaw = str | dict[str, Any]
-type _Templates = dict[str, _Json5ReplyRaw] | None
-type _FormatName = Any  # 运行时验证后注入 MatchObject.format
+_Json5MatchRaw: TypeAlias = str | dict[str, Any]
+_Json5ReplyRaw: TypeAlias = str | dict[str, Any]
+_Templates: TypeAlias = dict[str, _Json5ReplyRaw] | None
 
 
 # ---------------------------------------------------------------------------
@@ -110,7 +110,7 @@ def _compile_match(when: _Json5MatchRaw, *, file_path: str = "") -> Match:
         message=_regex_or_none(when.get("message")),
         model=_regex_or_none(when.get("model")),
         system=_regex_or_none(when.get("system")),
-        format=cast(_FormatName, fmt),
+        format=cast(FormatName, fmt),
         tool_name=parsed_tool_name,
         tool_call_id=parsed_tool_call_id,
     )
@@ -294,7 +294,7 @@ async def _load_json5_file(file_path: str, ctx: LoadContext) -> None:
 # 文件扩展名 → loader 映射
 # ---------------------------------------------------------------------------
 
-type _FileLoader = Callable[[str, LoadContext], Awaitable[None]]
+_FileLoader: TypeAlias = Callable[[str, LoadContext], Awaitable[None]]
 
 _LOADERS: dict[str, _FileLoader] = {
     ".json5": _load_json5_file,

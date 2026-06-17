@@ -11,7 +11,7 @@ OpenAI Responses 格式 - 请求解析。
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from pydantic import ValidationError
 
@@ -70,7 +70,7 @@ def _parse_input(req: ResponsesRequest) -> list[Message]:
             raw_role = item.role
             role = "system" if raw_role == "developer" else raw_role
             messages.append(Message(
-                role=cast(Any, role),
+                role=cast(Literal["system", "user", "assistant", "tool"], role),
                 content=_extract_input_content(item.content),
             ))
 
@@ -101,7 +101,7 @@ def _parse_tools(req: ResponsesRequest) -> list[ToolDef] | None:
     return result
 
 
-def parse_request(body: Any, meta: RequestMeta | None = None) -> MockRequest:
+def parse_request(body: dict[str, Any], meta: RequestMeta | None = None) -> MockRequest:
     """Responses API 请求解析入口。
 
     使用 "responses" 作为格式名，默认模型 "codex-mini"。

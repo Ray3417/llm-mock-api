@@ -17,7 +17,6 @@ Anthropic Messages API 响应序列化。
 from __future__ import annotations
 
 import json
-import time
 from collections.abc import Sequence
 
 from ..serialize_helpers import (

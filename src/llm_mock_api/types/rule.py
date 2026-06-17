@@ -1,29 +1,12 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Protocol, runtime_checkable
+from typing import Protocol, TypeAlias, runtime_checkable
 
 from .request import FormatName, MockRequest
-from .reply import Reply, ReplyOptions, Resolver, SequenceEntry
-
-
-type Match = str | re.Pattern[str] | MatchObject | Callable[[MockRequest], bool]
-"""
-确定规则是否匹配传入请求。
-
-`string` 对最后一条用户消息进行大小写不敏感的字串匹配。
-`re.Pattern` 对最后一条用户消息进行正则匹配。
-`MatchObject` 以 AND 逻辑同时检查多个字段。
-函数接收规范化请求并返回布尔值。
-
-示例：
-    server.when("hello").reply("Hi!")
-    server.when(re.compile(r"explain (\w+)", re.IGNORECASE)).reply("Here's an explanation.")
-    server.when({"model": "claude", "format": "anthropic"}).reply("Bonjour!")
-    server.when(lambda req: len(req.messages) > 5).reply("Long conversation!")
-"""
+from .reply import ReplyOptions, Resolver, SequenceEntry
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +43,23 @@ class MatchObject:
 
     predicate: Callable[[MockRequest], bool] | None = field(default=None)
     """在所有结构化字段通过后最后执行的额外谓词。"""
+
+
+Match: TypeAlias = str | re.Pattern[str] | MatchObject | Callable[[MockRequest], bool]
+"""
+确定规则是否匹配传入请求。
+
+`string` 对最后一条用户消息进行大小写不敏感的字串匹配。
+`re.Pattern` 对最后一条用户消息进行正则匹配。
+`MatchObject` 以 AND 逻辑同时检查多个字段。
+函数接收规范化请求并返回布尔值。
+
+示例：
+    server.when("hello").reply("Hi!")
+    server.when(re.compile(r"explain (\w+)", re.IGNORECASE)).reply("Here's an explanation.")
+    server.when({"model": "claude", "format": "anthropic"}).reply("Bonjour!")
+    server.when(lambda req: len(req.messages) > 5).reply("Long conversation!")
+"""
 
 
 @runtime_checkable

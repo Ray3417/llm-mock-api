@@ -90,7 +90,7 @@ def _parse_tools(req: OpenAIRequest) -> list[ToolDef] | None:
 
 # ── 入口：parse_request ─────────────────────────────────
 
-def parse_request(body: Any, meta: RequestMeta | None = None) -> MockRequest:
+def parse_request(body: dict[str, Any], meta: RequestMeta | None = None) -> MockRequest:
     """解析原始请求体为规范化的 MockRequest。
 
     等价于 TS:

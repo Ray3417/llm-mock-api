@@ -43,11 +43,11 @@ class Format(Protocol):
         """此格式匹配的 HTTP 路由路径，如 "/v1/chat/completions"。"""
         ...
 
-    def parse_request(self, body: Any, meta: RequestMeta | None = None) -> MockRequest:
+    def parse_request(self, body: dict[str, Any], meta: RequestMeta | None = None) -> MockRequest:
         """解析原始请求体为规范化的 MockRequest。"""
         ...
 
-    def is_streaming(self, body: Any) -> bool:
+    def is_streaming(self, body: dict[str, Any]) -> bool:
         """判断请求是否要求 SSE 流式响应。"""
         ...
 

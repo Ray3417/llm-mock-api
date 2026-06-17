@@ -25,8 +25,8 @@ class FormatImpl:
 
     name: FormatName
     route: str
-    parse_request: Callable[[Any, RequestMeta | None], MockRequest]
-    is_streaming: Callable[[Any], bool]
+    parse_request: Callable[[dict[str, Any], RequestMeta | None], MockRequest]
+    is_streaming: Callable[[dict[str, Any]], bool]
     serialize: Callable[[ReplyObject, str, ReplyOptions | None], Sequence[SSEChunk]]
     serialize_complete: Callable[[ReplyObject, str], dict[str, Any]]
     serialize_error: Callable[[ErrorReply], dict[str, Any]]

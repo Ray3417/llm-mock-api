@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from datetime import datetime, timezone
-from typing import Literal, Any
+from typing import Literal, TypeAlias, Any
 
 # ANSI 颜色转义码（替代 picocolors）
 _RED = "\033[31m"
@@ -49,7 +49,7 @@ LEVEL_PRIORITY = {
 }
 
 # 日志级别，从 "none"（静默）到 "all"（全部）
-type LogLevel = Literal["none", "error", "warning", "info", "debug", "all"]
+LogLevel: TypeAlias = Literal["none", "error", "warning", "info", "debug", "all"]
 
 _LEVEL_STYLE = {
     "error": {"label": _red(_bold("ERROR")), "symbol": _red("✗")},
@@ -58,7 +58,7 @@ _LEVEL_STYLE = {
     "debug": {"label": _dim("DEBUG"), "symbol": _dim("·")},
 }
 
-type _ConsoleMethod = Literal["error", "warn", "log"]
+_ConsoleMethod: TypeAlias = Literal["error", "warn", "log"]
 
 _LEVEL_CONFIG: dict[str, dict[str, Any]] = {
     "error": {"priority": LEVEL_PRIORITY["error"], "method": "error"},

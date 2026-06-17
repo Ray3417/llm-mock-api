@@ -32,7 +32,7 @@ EMPTY_META: RequestMeta = RequestMeta()
 """空的默认元数据。"""
 
 
-def is_streaming(body: Any) -> bool:
+def is_streaming(body: dict[str, Any]) -> bool:
     """检查请求体是否要求流式响应。
 
     语义：仅当 `stream` 字段显式为 `True` 时返回 True；
@@ -52,7 +52,7 @@ def build_mock_request(
     messages: Sequence[Message],
     tools: Sequence[ToolDef] | None,
     default_model: str,
-    raw: Any,
+    raw: dict[str, Any],
     meta: RequestMeta = EMPTY_META,
 ) -> MockRequest:
     """从格式特定数据构造规范化的 MockRequest。

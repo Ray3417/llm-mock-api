@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .logger import LEVEL_PRIORITY, LogLevel
+from .logger import LEVEL_PRIORITY
 from .mock_server import MockServer, MockServerOptions
 
 # ---------------------------------------------------------------------------
@@ -175,7 +175,7 @@ def _print_banner(server: MockServer, options: MockServerOptions, rules: str | N
         print(f"  Latency    {options.default_latency}ms per chunk")
     print(f"  Endpoints  {', '.join(server.routes)}")
     if watch:
-        print(f"  Watch      enabled")
+        print("  Watch      enabled")
     print()
 
 
@@ -315,23 +315,24 @@ _EXAMPLE_RULES = """// =========================================================
       },
     },
 
-    // [7] 序列回复：同一关键词每次请求返回下一条
-    {
-      when: "step",
-      replies: [
-        "Step 1/3 — Initializing...",
-        "Step 2/3 — Processing data...",
-        "Step 3/3 — Done!",
-      ],
-    },
-
-    // [8] 序列回复：带每步自定义 latency / chunkSize（模拟流式节奏）
+    // [7] 序列回复：带每步自定义 latency / chunkSize（模拟流式节奏）
+    //     注意："slow step" 必须在 "step" 之前，否则 "step" 的子串匹配会先命中
     {
       when: "slow step",
       replies: [
         { reply: "Fast response (no delay).", latency: 0, chunkSize: 0 },
         { reply: "Medium response (200ms delay, chunked).", latency: 200, chunkSize: 20 },
         { reply: "Slow response (500ms delay, chunked).", latency: 500, chunkSize: 10 },
+      ],
+    },
+
+    // [8] 序列回复：同一关键词每次请求返回下一条
+    {
+      when: "step",
+      replies: [
+        "Step 1/3 — Initializing...",
+        "Step 2/3 — Processing data...",
+        "Step 3/3 — Done!",
       ],
     },
 

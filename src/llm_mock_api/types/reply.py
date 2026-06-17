@@ -2,13 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TypeAlias
 
 from .request import MockRequest
-
-
-type Reply = str | ReplyObject
-"""回复可以是纯字符串（转为 `{"text": "..."}`）或完整的回复对象。"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,7 +72,30 @@ class Usage:
     """输出 token 数量。"""
 
 
-type Resolver = (
+@dataclass(frozen=True, slots=True)
+class ReplyOptions:
+    """每条规则的流式选项。会与服务器级默认值合并，规则级值优先。"""
+
+    latency: int | None = field(default=None)
+    """SSE chunk 之间的毫秒延迟。"""
+
+    chunk_size: int | None = field(default=None)
+    """文本分块大小（字符数），用于更真实的流式模拟。"""
+
+
+@dataclass(frozen=True, slots=True)
+class ReplySequenceEntryWithOptions:
+    """带每步选项的回复条目。"""
+
+    reply: Reply
+    options: ReplyOptions | None = field(default=None)
+
+
+Reply: TypeAlias = str | ReplyObject
+"""回复可以是纯字符串（转为 `{"text": "..."}`）或完整的回复对象。"""
+
+
+Resolver: TypeAlias = (
     Reply
     | Callable[[MockRequest], Reply | Awaitable[Reply]]
 )
@@ -92,24 +111,5 @@ type Resolver = (
 """
 
 
-@dataclass(frozen=True, slots=True)
-class ReplyOptions:
-    """每条规则的流式选项。会与服务器级默认值合并，规则级值优先。"""
-
-    latency: int | None = field(default=None)
-    """SSE chunk 之间的毫秒延迟。"""
-
-    chunk_size: int | None = field(default=None)
-    """文本分块大小（字符数），用于更真实的流式模拟。"""
-
-
-type SequenceEntry = Reply | ReplySequenceEntryWithOptions
+SequenceEntry: TypeAlias = Reply | ReplySequenceEntryWithOptions
 """回复序列中的单个条目。"""
-
-
-@dataclass(frozen=True, slots=True)
-class ReplySequenceEntryWithOptions:
-    """带每步选项的回复条目。"""
-
-    reply: Reply
-    options: ReplyOptions | None = field(default=None)

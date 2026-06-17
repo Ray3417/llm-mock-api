@@ -98,8 +98,8 @@ llm-mock-api init --force
 | `joke` | 结构化回复（`text` + `reasoning`，仅 Responses 格式返回 reasoning 字段） | reasoning: `User wants a programmer joke. Make it short and relatable.`；text: `Why did the developer go broke? Because he used up all his cache.`（Chat Completions 仅返回 text 部分） |
 | `weather` | 模板引用 + 工具调用（`$weather_tool`） | content: `Looking up the weather for you...`；tool_call: `get_weather(location="Beijing", unit="celsius")` |
 | `multi tool` | 多工具调用 | content: `I need to run several tools to answer this.`；tool_calls: `search_db(query="users")` + `send_email(to="admin@example.com")` |
-| `step` | 序列回复（replies 数组） | 第1次：`Step 1/3 — Initializing...`；第2次：`Step 2/3 — Processing data...`；第3次：`Step 3/3 — Done!` |
 | `slow step` | 序列回复 + 自定义 latency/chunkSize | `Fast response (no delay).`（0ms delay，无分块）→ `Medium response (200ms delay, chunked).`（200ms，20 char/chunk）→ `Slow response (500ms delay, chunked).`（500ms，10 char/chunk） |
+| `step` | 序列回复（replies 数组） | 第1次：`Step 1/3 — Initializing...`；第2次：`Step 2/3 — Processing data...`；第3次：`Step 3/3 — Done!` |
 | `once` | 次数限制 `times: 1` | 第1次：`This rule triggers only ONCE — subsequent requests fall through.`；第2次起：fallback |
 | `three times` | 次数限制 `times: 3` | 前3次均返回：`This rule triggers up to 3 times.`；第4次起：fallback |
 | `long` | SSE 流式输出（长文本分块） | `This is a longer response...`（分块节奏由 `config.json` 中的 `default_latency` / `default_chunk_size` 控制） |

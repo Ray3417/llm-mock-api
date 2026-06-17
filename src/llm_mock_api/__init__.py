@@ -7,22 +7,16 @@ from .types.reply import (
     SequenceEntry,
     ToolCall,
 )
-from .types.request import FormatName, Message, MockRequest, ToolDef
 from .types.rule import (
     Match,
     MatchObject,
     PendingRule,
-    Rule,
     RuleHandle,
     RuleSummary,
 )
 from .mock_server import MockServer, MockServerOptions
 
 __all__ = [
-    "FormatName",
-    "Message",
-    "ToolDef",
-    "MockRequest",
     "Reply",
     "ReplyObject",
     "ErrorReply",
@@ -35,7 +29,6 @@ __all__ = [
     "PendingRule",
     "RuleHandle",
     "RuleSummary",
-    "Rule",
     "MockServer",
     "MockServerOptions",
 ]

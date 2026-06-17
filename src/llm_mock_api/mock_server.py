@@ -435,8 +435,6 @@ class MockServer:
 
     async def _watch_path_for_reload(self, path: str, *, debounce_ms: int = 100) -> None:
         """watch 模式：监听指定路径的文件改动，debounce 后 reset + reload + fallback。"""
-        import os
-
         snapshot = _fs_snapshot(path)
         while self._listening:
             await asyncio.sleep(debounce_ms / 1000)

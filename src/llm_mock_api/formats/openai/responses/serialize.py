@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 import time
 from collections.abc import Callable, Sequence
-from typing import NamedTuple
+from typing import NamedTuple, TypeAlias
 
 from ...serialize_helpers import (
     DEFAULT_USAGE,
@@ -35,7 +35,7 @@ from ....types.reply import ErrorReply, ReplyObject, ReplyOptions, ToolCall, Usa
 
 # ── 类型别名 ────────────────────────────────────────────────
 
-type ChunkFn = Callable[[dict[str, object]], SSEChunk]
+ChunkFn: TypeAlias = Callable[[dict[str, object]], SSEChunk]
 
 
 class _StreamBlock(NamedTuple):

@@ -3,7 +3,7 @@ name = "llm-mock-api"
 version = "0.1.0"
 description = "一个用于测试的 Mock LLM 服务器，支持 OpenAI、Anthropic 和 Responses API 格式"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.100.0",
     "uvicorn[standard]>=0.23.0",
@@ -25,14 +25,14 @@ packages = ["src/llm_mock_api"]
 [tool.ruff]
 line-length = 120
 indent-width = 4
-target-version = "py314"
+target-version = "py310"
 
 [tool.ruff.format]
 quote-style = "double"
 line-ending = "lf"
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disable_error_code = ["empty-body"]

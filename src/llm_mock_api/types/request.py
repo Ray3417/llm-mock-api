@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 
-type FormatName = Literal["openai", "anthropic", "responses"]
+FormatName: TypeAlias = Literal["openai", "anthropic", "responses"]
 """检测到的请求所使用的 LLM API 线路格式。"""
 
 
@@ -43,7 +43,7 @@ class MockRequest:
     last_tool_call_id: str | None = field(default=None)
     """当最后一条消息是工具结果时设置。用于 `when_tool_result()`。"""
 
-    raw: Any = field(default=None)
+    raw: dict[str, Any] | None = field(default=None)
     """原始请求体，用于我们未提取的字段。"""
 
     headers: dict[str, str | None] = field(default_factory=dict)
@@ -77,5 +77,5 @@ class ToolDef:
     description: str | None = field(default=None)
     """工具功能的描述。"""
 
-    parameters: Any | None = field(default=None)
+    parameters: dict[str, Any] | None = field(default=None)
     """工具参数的 JSON Schema，原样传递。"""

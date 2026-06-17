@@ -47,6 +47,6 @@ class ResponsesRequest(BaseModel):
     model: str | None = None
     input: str | list[ResponsesRequestInputItem] | None = None
     instructions: str | None = None
-    tools: list[Any] | None = None
+    tools: list[dict[str, Any]] | None = None
 
     model_config = {"extra": "allow"}
