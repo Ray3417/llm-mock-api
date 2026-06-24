@@ -68,14 +68,28 @@ class OpenAIToolFunction(BaseModel):
     """JSON Schema 描述的参数。"""
 
 
+class OpenAICustomTool(BaseModel):
+    """✨ NEW：GPT-5 family 的 custom tool 描述。custom 工具使用语法约束文本
+    而非 JSON Schema 参数；我们只保留 name + description 用于匹配和返回。"""
+
+    name: str
+    """custom 工具名。"""
+
+    description: str | None = None
+    """工具描述，供模型理解用途。"""
+
+
 class OpenAITool(BaseModel):
     """请求中的 tool 定义。"""
 
     type: str = "function"
-    """工具类型，目前总是 "function"。"""
+    """工具类型，常见值："function"、"custom"。"""
 
-    function: OpenAIToolFunction
-    """函数的具体定义。"""
+    function: OpenAIToolFunction | None = None
+    """当 type == "function" 时的具体定义。"""
+
+    custom: OpenAICustomTool | None = None
+    """✨ NEW：当 type == "custom" 时的具体定义。"""
 
 
 # ── 完整请求 ─────────────────────────────────────────────

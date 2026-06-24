@@ -1,6 +1,6 @@
 [project]
 name = "llm-mock-api"
-version = "0.1.0"
+version = "0.1.1"
 description = "一个用于测试的 Mock LLM 服务器，支持 OpenAI、Anthropic 和 Responses API 格式"
 readme = "README.md"
 license = "MIT"

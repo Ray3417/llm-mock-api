@@ -253,11 +253,11 @@ _EXAMPLE_RULES = """// =========================================================
     // [0] 基础：字符串匹配 → 文本回复
     {
       when: "hi",
-      reply: "Hello! 👋 This is llm-mock-api. How can I help you today?",
+      reply: "Hello! This is llm-mock-api. How can I help you today?",
     },
     {
       when: "hello",
-      reply: "Hello! 👋 This is llm-mock-api. How can I help you today?",
+      reply: "Hello! This is llm-mock-api. How can I help you today?",
     },
     {
       when: "你好",

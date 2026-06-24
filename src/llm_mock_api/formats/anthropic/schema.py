@@ -50,6 +50,35 @@ class AnthropicTool(BaseModel):
     model_config = {"extra": "allow"}
 
 
+# ✨ NEW：以下两个模型用于区分用户自定义工具与 Anthropic 内置工具（如 web_search_20250305）。
+# AnthropicRequest.tools 数组中的每一项可能是用户自定义 tool（含 input_schema）
+# 也可能是内置工具（含 type 字段，如 "web_search_20250305"）。我们在 parse_tools 中
+# 用这两个模型分别 safeParse 来归类。
+
+class ToolDefinitionSchema(BaseModel):
+    """用户自定义 tool 的最小 schema。对应 TS: ToolDefinitionSchema。"""
+
+    name: str
+    """工具函数名称。"""
+
+    description: str | None = None
+    """工具功能描述。"""
+
+    input_schema: dict[str, Any] | None = None
+    """工具参数的 JSON Schema。"""
+
+    model_config = {"extra": "allow"}
+
+
+class ServerToolSchema(BaseModel):
+    """Anthropic 内置 server-side tool 的最小 schema。对应 TS: ServerToolSchema。"""
+
+    type: str
+    """内置工具类型标识符，如 "web_search_20250305"。"""
+
+    model_config = {"extra": "allow"}
+
+
 class AnthropicRequest(BaseModel):
     """Anthropic Messages API 请求体。
 
@@ -66,8 +95,12 @@ class AnthropicRequest(BaseModel):
     messages: list[AnthropicMessage] = []
     """对话消息列表。"""
 
-    tools: list[AnthropicTool] | None = None
-    """可选的工具定义列表。"""
+    # ✨ NEW：保持 tools 为原始 dict，不提前解析为 AnthropicTool 实例。
+    # 因为 parse 阶段会用 ToolDefinitionSchema / ServerToolSchema 两个独立
+    # schema 逐次 safeParse（对应 TS 的 `.flatMap(t => ToolDefinitionSchema.safeParse(t))`）。
+    # 如果这里提前解析，Pydantic 的 model_validate 会拒绝跨类实例。
+    tools: list[dict[str, Any]] | None = None
+    """可选的工具定义列表（保持为原始 dict，不做提前解析）。"""
 
     stream: bool | None = None
     """是否要求 SSE 流式响应。"""

@@ -1,7 +1,7 @@
 # llm-mock-api
 
 > 本项目是 [theblixguy/llm-mock-server](https://github.com/theblixguy/llm-mock-server) 的 Python 重写版本，主要用于本人学习。  
-> 目前功能版本略低于原项目，后续会逐步跟进并对齐上游更新。
+> 当前功能与上游 [`theblixguy/llm-mock-server@v1.1.0`](https://github.com/theblixguy/llm-mock-server/tree/v1.1.0) 对齐。
 
 一个用于测试的 Mock LLM 服务器，支持 OpenAI（v1/Responses；v1/chat/completions ）与 Anthropic 格式。
 

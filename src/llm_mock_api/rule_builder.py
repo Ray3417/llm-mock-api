@@ -94,6 +94,10 @@ class RuleBuilder:
         """快捷方式：匹配特定工具名。"""
         return self.when(MatchObject(tool_name=tool_name))
 
+    def when_server_tool(self, tool_type: str) -> PendingRule:
+        """快捷方式：匹配具有特定 `type` 的 server-side tool。"""
+        return self.when(MatchObject(server_tool=tool_type))
+
     def when_tool_result(self, tool_call_id: str) -> PendingRule:
         """快捷方式：匹配特定 tool_call_id。"""
         return self.when(MatchObject(tool_call_id=tool_call_id))

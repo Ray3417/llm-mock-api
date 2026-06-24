@@ -17,7 +17,13 @@ from pydantic import ValidationError
 
 from ...request_helpers import RequestMeta, build_mock_request
 from ....types.request import Message, MockRequest, ToolDef
-from .schema import FunctionTool, ResponsesRequest
+from .schema import (
+    FunctionCallInputSchema,
+    FunctionCallOutputSchema,
+    FunctionTool,
+    InputMessageSchema,
+    ResponsesRequest,
+)
 
 
 def _extract_input_content(content: str | list[dict[str, object]] | None) -> str:
@@ -36,10 +42,13 @@ def _extract_input_content(content: str | list[dict[str, object]] | None) -> str
 
 
 def _parse_input(req: ResponsesRequest) -> list[Message]:
-    """instructions → system role；input → messages 数组。
+    """✨ NEW：instructions → system role；input item 用三个 schema 逐次 safeParse。
 
-    developer 角色在 Responses 中需映射为 system（与 chat_completions 相同的角色归一化）。
-    含 call_id 的项视为工具调用输出，映射为 tool role。
+    解析顺序（对应 TS flatMap safeParse）：
+      1. FunctionCallOutputSchema（含 output + call_id）→ tool role
+      2. FunctionCallInputSchema（含 arguments + call_id）→ tool role
+      3. InputMessageSchema（含 role + content）→ 对应角色
+    解析不到任何一个 schema 的 item 被静默跳过。
     """
     messages: list[Message] = []
 
@@ -54,35 +63,47 @@ def _parse_input(req: ResponsesRequest) -> list[Message]:
         return messages
 
     for item in req.input:
-        if item.call_id is not None:
-            # 工具调用结果：call_id 存在
-            # TS: "output" in item ? item.output : item.arguments
-            if "output" in item.model_fields_set:
-                content = item.output or ""
-            else:
-                content = item.arguments or ""
+        # 尝试 FunctionCallOutput
+        try:
+            output = FunctionCallOutputSchema.model_validate(item)
             messages.append(Message(
                 role="tool",
-                content=content,
-                tool_call_id=item.call_id,
+                content=output.output or "",
+                tool_call_id=output.call_id,
             ))
-        else:
-            raw_role = item.role
-            role = "system" if raw_role == "developer" else raw_role
+            continue
+        except ValidationError:
+            pass
+
+        # 尝试 FunctionCallInput
+        try:
+            call = FunctionCallInputSchema.model_validate(item)
+            messages.append(Message(
+                role="tool",
+                content=call.arguments or "",
+                tool_call_id=call.call_id,
+            ))
+            continue
+        except ValidationError:
+            pass
+
+        # 尝试 InputMessage
+        try:
+            msg = InputMessageSchema.model_validate(item)
+            role = "system" if msg.role == "developer" else (msg.role or "user")
             messages.append(Message(
                 role=cast(Literal["system", "user", "assistant", "tool"], role),
-                content=_extract_input_content(item.content),
+                content=_extract_input_content(msg.content),
             ))
+            continue
+        except ValidationError:
+            pass
 
     return messages
 
 
 def _parse_tools(req: ResponsesRequest) -> list[ToolDef] | None:
-    """遍历 tools 数组，用 FunctionTool 逐项目验证并提取 ToolDef。
-
-    与 chat_completions 的区别：FunctionTool 使用 Responses 专用模型而非 OpenAI 的 tool 格式。
-    验证失败的单个工具会被跳过（对应 TS: safeParse + filter(r.success)）。
-    """
+    """✨ NEW：遍历 tools 数组，用 FunctionTool 逐项目 safeParse，flatMap 出结果。"""
     if not req.tools:
         return None
 
@@ -90,20 +111,37 @@ def _parse_tools(req: ResponsesRequest) -> list[ToolDef] | None:
     for raw_tool in req.tools:
         try:
             ft = FunctionTool.model_validate(raw_tool)
-            result.append(ToolDef(
-                name=ft.name,
-                description=ft.description,
-                parameters=ft.parameters,
-            ))
         except ValidationError:
-            # 验证失败的工具静默跳过，不影响其他工具
             continue
+        result.append(ToolDef(
+            name=ft.name,
+            description=ft.description,
+            parameters=ft.parameters,
+        ))
     return result
+
+
+def _parse_server_tool_types(req: ResponsesRequest) -> list[str]:
+    """✨ NEW：提取 tools 中所有非 function 工具的 type。
+
+    对应 TS: parseServerToolTypes(req) —— 在 Responses 中，web_search、
+    file_search 等内置工具是 tools 数组中的一项（type != "function"）。
+    """
+    if not req.tools:
+        return []
+
+    types: list[str] = []
+    for raw_tool in req.tools:
+        tool_type = raw_tool.get("type") if isinstance(raw_tool, dict) else None
+        if isinstance(tool_type, str) and tool_type != "function":
+            types.append(tool_type)
+    return types
 
 
 def parse_request(body: dict[str, Any], meta: RequestMeta | None = None) -> MockRequest:
     """Responses API 请求解析入口。
 
+    ✨ NEW：新增 parseServerToolTypes 调用，用于收集内置工具类型。
     使用 "responses" 作为格式名，默认模型 "codex-mini"。
     """
     parsed = ResponsesRequest.model_validate(body)
@@ -112,6 +150,7 @@ def parse_request(body: dict[str, Any], meta: RequestMeta | None = None) -> Mock
         parsed.model_dump(),
         _parse_input(parsed),
         _parse_tools(parsed),
+        _parse_server_tool_types(parsed),  # ✨ NEW
         "codex-mini",
         body,
         meta if meta is not None else RequestMeta(),

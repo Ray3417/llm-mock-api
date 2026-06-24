@@ -45,6 +45,10 @@ class RuleAPI(Protocol):
         """`when({ toolName })` 的简写。"""
         ...
 
+    def when_server_tool(self, tool_type: str, /) -> PendingRule:
+        """`when({ serverTool })` 的简写。匹配具有指定 `type` 的 server-side tool。"""
+        ...
+
     def when_tool_result(self, tool_call_id: str, /) -> PendingRule:
         """`when({ toolCallId })` 的简写。"""
         ...
@@ -197,6 +201,7 @@ class MockServer:
         # 在 Python 中，bound method 自动持有 self，因此不需要显式 bind。
         self.when = self._rules.when
         self.when_tool = self._rules.when_tool
+        self.when_server_tool = self._rules.when_server_tool
         self.when_tool_result = self._rules.when_tool_result
         self.next_error = self._rules.next_error
 

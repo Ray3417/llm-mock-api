@@ -17,7 +17,7 @@ from typing import Any, cast, Literal
 
 from ..request_helpers import RequestMeta, build_mock_request
 from ...types.request import Message, MockRequest, ToolDef
-from .schema import AnthropicRequest
+from .schema import AnthropicRequest, ServerToolSchema, ToolDefinitionSchema
 
 
 def _extract_system(system: str | list[dict[str, Any]] | None) -> str:
@@ -128,20 +128,46 @@ def _parse_messages(req: AnthropicRequest) -> list[Message]:
 def _parse_tools(req: AnthropicRequest) -> list[ToolDef] | None:
     """将 Anthropic tools 归一化为通用 ToolDef 列表。
 
+    ✨ NEW：只保留用户自定义工具（可被 ToolDefinitionSchema 验证的那些）。
+    Anthropic 内置工具（如 web_search_20250305）被过滤掉，
+    其类型信息由 `_parse_server_tool_types` 单独收集。
     对应 TS: parseTools(req)。
-    字段映射：AnthropicTool.input_schema → ToolDef.parameters
     """
     if not req.tools:
         return None
 
-    return [
-        ToolDef(
+    result: list[ToolDef] = []
+    for raw in req.tools:
+        # 先用 ToolDefinitionSchema 尝试验证；失败则视为内置工具跳过
+        try:
+            t = ToolDefinitionSchema.model_validate(raw)
+        except Exception:
+            continue
+        result.append(ToolDef(
             name=t.name,
             description=t.description,
             parameters=t.input_schema,
-        )
-        for t in req.tools
-    ]
+        ))
+    return result
+
+
+def _parse_server_tool_types(req: AnthropicRequest) -> list[str]:
+    """✨ NEW：提取请求中 Anthropic 内置 server-side tool 的 type 列表。
+
+    如 `web_search_20250305`、`bash_20250305` 等，用于 `when_server_tool()` 匹配。
+    对应 TS: parseServerToolTypes(req)。
+    """
+    if not req.tools:
+        return []
+
+    types: list[str] = []
+    for raw in req.tools:
+        try:
+            server = ServerToolSchema.model_validate(raw)
+        except Exception:
+            continue
+        types.append(server.type)
+    return types
 
 
 def parse_request(body: dict[str, Any], meta: RequestMeta | None = None) -> MockRequest:
@@ -159,6 +185,7 @@ def parse_request(body: dict[str, Any], meta: RequestMeta | None = None) -> Mock
         parsed.model_dump(),
         _parse_messages(parsed),
         _parse_tools(parsed),
+        _parse_server_tool_types(parsed),  # ✨ NEW
         "claude-sonnet-4-6",
         body,
         meta if meta is not None else RequestMeta(),

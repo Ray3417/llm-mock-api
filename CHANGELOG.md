@@ -2,6 +2,23 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 格式。
 
+## [0.1.1] - 2026-06-24
+
+与上游 [theblixguy/llm-mock-server@v1.1.0](https://github.com/theblixguy/llm-mock-server/tree/v1.1.0) 功能对齐的小版本发布。
+
+### 新增
+
+- **`server_tool` 匹配条件**：在 `MatchObject` / 规则文件中新增 `server_tool` 字段，可按 Anthropic 内置工具（如 `web_search_20250305`）或 OpenAI 工具类型（如 `web_search` / `file_search`）精确匹配请求
+- **`when_server_tool()` API**：`server.when_server_tool("web_search_20250305")` 快捷绑定
+- **GPT-5 family `custom` tool 识别**：`/v1/chat/completions` 中 `type: "custom"` 的工具会被正常解析并放入 `tool_names`
+- **重试检测**：基于请求头 `x-stainless-retry-count` 识别 SDK 自动重试 — 不消耗规则 `remaining`、不推进 `replies` 序列
+
+### 修复
+
+- **`/v1/responses` 请求体中的 `input` 数组因 Pydantic 嵌套模型导致解析为 empty（全部 fallback）** — 现改为保持原始 `dict`，由 parse 阶段的 `FunctionCallOutputSchema` / `FunctionCallInputSchema` / `InputMessageSchema` 安全解析（与 Zod `safeParse` 语义一致）
+- **Anthropic tools 同样的嵌套模型解析问题** — 保持为 `list[dict[str, Any]]`，由 `ToolDefinitionSchema` / `ServerToolSchema` 分别 safeParse，正确区分 user tool 与 server tool
+- **Windows GBK 控制台打印 emoji 触发 `UnicodeEncodeError`**：示例规则回复、测试期望值中的 👋 已移除为纯文本
+
 ## [0.1.0] - 2026-06-17
 
 首个正式发布版本。基于 [theblixguy/llm-mock-server](https://github.com/theblixguy/llm-mock-server) 的 Python 重写。

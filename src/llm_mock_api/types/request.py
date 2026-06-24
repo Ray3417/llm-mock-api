@@ -40,6 +40,9 @@ class MockRequest:
     tool_names: Sequence[str] = field(default_factory=tuple)
     """从 `tools` 中提取的工具名称，用于 `when_tool()` 快速查找。"""
 
+    server_tool_types: Sequence[str] = field(default_factory=tuple)
+    """请求中启用的 server-side 工具的 `type` 字符串列表（如 Anthropic `web_search_20250305`）。与自定义工具（`tools`/`tool_names`）分开存储，通过 `when_server_tool()` 匹配。"""
+
     last_tool_call_id: str | None = field(default=None)
     """当最后一条消息是工具结果时设置。用于 `when_tool_result()`。"""
 

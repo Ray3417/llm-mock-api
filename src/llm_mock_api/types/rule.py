@@ -38,6 +38,9 @@ class MatchObject:
     tool_name: str | None = field(default=None)
     """当请求包含此名称的工具定义时匹配。"""
 
+    server_tool: str | None = field(default=None)
+    """匹配 server-side tool 的类型（例如：`web_search_20250305`）。用于检测请求是否启用特定的内置工具。"""
+
     tool_call_id: str | None = field(default=None)
     """当最后一条工具结果消息具有此 `tool_call_id` 时匹配。"""
 

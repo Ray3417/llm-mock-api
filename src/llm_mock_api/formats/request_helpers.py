@@ -51,6 +51,7 @@ def build_mock_request(
     body: Mapping[str, Any],
     messages: Sequence[Message],
     tools: Sequence[ToolDef] | None,
+    server_tool_types: Sequence[str],
     default_model: str,
     raw: dict[str, Any],
     meta: RequestMeta = EMPTY_META,
@@ -58,6 +59,7 @@ def build_mock_request(
     """从格式特定数据构造规范化的 MockRequest。
 
     从 messages 中提取最后一条用户消息、系统提示以及工具调用信息。
+    `server_tool_types` 单独存储，用于 `when_server_tool()` 匹配内置工具。
     """
     user_messages = [m for m in messages if m.role == "user"]
     tool_call_messages = [m for m in messages if m.tool_call_id is not None]
@@ -71,6 +73,7 @@ def build_mock_request(
         system_message=next((m.content for m in messages if m.role == "system"), ""),
         tools=tools,
         tool_names=tuple(t.name for t in tools) if tools is not None else (),
+        server_tool_types=tuple(server_tool_types),
         last_tool_call_id=(tool_call_messages[-1].tool_call_id if tool_call_messages else None),
         raw=raw,
         headers=dict(meta.headers),

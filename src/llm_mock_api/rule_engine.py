@@ -76,6 +76,9 @@ def _compile_matcher(match: Match) -> Callable[[MockRequest], bool]:
             return False
         if obj.tool_name is not None and obj.tool_name not in req.tool_names:
             return False
+        # 新增：server tool type 匹配
+        if obj.server_tool is not None and obj.server_tool not in req.server_tool_types:
+            return False
         if obj.tool_call_id and req.last_tool_call_id != obj.tool_call_id:
             return False
         if obj.predicate is not None and not obj.predicate(req):
@@ -129,6 +132,20 @@ def _create_rule(
 # ============================================================
 
 
+# --- SDK 重试检测（新增） ---
+RETRY_COUNT_HEADER = "x-stainless-retry-count"
+"""OpenAI 与 Anthropic 的 SDK 都会在每个请求上附带这个 header，值从 `0` 开始，每次重试递增。"""
+
+
+def is_retry(req: MockRequest) -> bool:
+    """判断请求是否是 SDK 的重试。重试不应该消耗规则的 remaining 次数，也不应该推进序列。"""
+    count = req.headers.get(RETRY_COUNT_HEADER)
+    return count is not None and int(count) > 0
+
+
+# --- END 重试检测 ---
+
+
 @dataclass(slots=True)
 class _SequenceStep:
     """内部使用：回复序列中的一步。"""
@@ -150,17 +167,23 @@ def create_sequence_resolver(
     """创建一个按顺序返回每条回复的解析器。
 
     遍历完所有步骤后，最后一次回复将被无限重复。
-    每次调用会同步更新 rule.options 为当前步骤的选项。"""
+    每次调用会同步更新 rule.options 为当前步骤的选项。
+
+    新增：重放（is_retry 返回 True）不会推进序列。"""
     if len(steps) == 0:
         raise ValueError("Sequence requires at least one entry.")
     index: list[int] = [0]  # 用 list 作为可变容器
     last = steps[-1]
+    current = steps[0]  # 当前步骤
 
-    def resolver(_req: MockRequest | None = None) -> Reply:
-        step = steps[index[0]] if index[0] < len(steps) else last
-        index[0] += 1
-        rule.options = step.options if step.options is not None else ReplyOptions()
-        return step.reply
+    def resolver(req: MockRequest) -> Reply:
+        # 新增：重放不推进序列，保持同一条回复
+        if not is_retry(req) or index[0] == 0:
+            step = steps[index[0]] if index[0] < len(steps) else last
+            index[0] += 1
+            current = step
+        rule.options = current.options if current.options is not None else ReplyOptions()
+        return current.reply
 
     return _SequenceResolverResult(resolver=resolver, entry_count=len(steps))
 
@@ -201,16 +224,20 @@ class RuleEngine:
     def match(self, req: MockRequest) -> Rule | None:
         """按顺序查找匹配请求的第一条规则。
 
-        匹配后规则的 remaining 递减，若降至 0 则从列表中移除。"""
+        匹配后规则的 remaining 递减，若降至 0 则从列表中移除。
+        新增：重放（is_retry 返回 True）不会消耗规则的 remaining。"""
+        retry = is_retry(req)
         for i in range(len(self._rules)):
             rule = self._rules[i]
             if rule.remaining <= 0:
                 continue
             if not rule.match(req):
                 continue
-            rule.remaining -= 1
-            if rule.remaining <= 0:
-                self._rules.pop(i)
+            # 新增：重放不消耗 remaining
+            if not retry:
+                rule.remaining -= 1
+                if rule.remaining <= 0:
+                    self._rules.pop(i)
             return rule
         return None
 
