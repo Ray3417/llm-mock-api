@@ -114,11 +114,17 @@ def _merge_options(args: argparse.Namespace) -> tuple[MockServerOptions, str | N
         if val is not None:
             options_kwargs[key] = val
 
+    # 同时支持 "latency" 和 "default_latency"（init 生成的 config.json 用 default_ 前缀）
     latency = _pick("latency")
+    if latency is None:
+        latency = _pick("default_latency")
     if latency is not None:
         options_kwargs["default_latency"] = latency
 
+    # 同时支持 "chunk_size" 和 "default_chunk_size"
     chunk_size = _pick("chunk_size")
+    if chunk_size is None:
+        chunk_size = _pick("default_chunk_size")
     if chunk_size is not None:
         options_kwargs["default_chunk_size"] = chunk_size
 
@@ -187,8 +193,8 @@ _EXAMPLE_CONFIG = """{
   "port": 8002,
   "host": "127.0.0.1",
   "log_level": "info",
-  "default_latency": 50,
-  "default_chunk_size": 50,
+  "default_latency": 200,
+  "default_chunk_size": 10,
   "fallback": "Sorry, I don't understand your request. Try saying: hi, weather, joke, step, or echo.",
   "rules": "./rules.json5",
   "watch": true
@@ -388,7 +394,7 @@ async def _cmd_init(args: argparse.Namespace) -> int:
     print()
     print("Next steps:")
     print(f"  cd {target}")
-    print("  llm-mock-api start   # 启动服务器")
+    print("  uv run llm-mock-api start   # 启动服务器")
     return 0
 
 

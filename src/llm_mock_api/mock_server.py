@@ -87,11 +87,11 @@ class MockServerOptions:
     log_level: LogLevel = "none"
     """日志级别。默认 `"none"`（不输出）。"""
 
-    default_latency: int = 0
-    """SSE chunk 之间的默认毫秒延迟。各规则可覆盖。默认 `0`（不延迟）。"""
+    default_latency: int = 200
+    """SSE chunk 之间的默认毫秒延迟。各规则可覆盖。默认 `200`（每 200ms 发一块，便于肉眼观察）。"""
 
-    default_chunk_size: int = 0
-    """默认 SSE 文本分块大小（字符数）。各规则可覆盖。默认 `0`（不分块）。"""
+    default_chunk_size: int = 10
+    """默认 SSE 文本分块大小（字符数）。各规则可覆盖。默认 `10`（每 10 字符一块）。"""
 
     fallback: str | None = None
     """无规则匹配时返回的默认回复。默认 `None`（使用内置 fallback 文案）。"""
@@ -115,8 +115,8 @@ class MockServerOptions:
                 "port": 8002,
                 "host": "127.0.0.1,
                 "log_level": "info",
-                "default_latency": 0,
-                "default_chunk_size": 0,
+                "default_latency": 200,
+                "default_chunk_size": 10,
                 "fallback": "sorry, I don't know",
                 "rules": "./rules.json5",
                 "watch": true

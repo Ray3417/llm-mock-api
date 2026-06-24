@@ -12,10 +12,10 @@
 uv pip install llm-mock-api
 
 # 在当前目录生成 config.json 和 rules.json5
-llm-mock-api init
+uv run llm-mock-api init
 
 # 启动服务
-llm-mock-api start
+uv run llm-mock-api start
 ```
 
 
@@ -25,19 +25,19 @@ llm-mock-api start
 
 ```bash
 # 最简方式（自动从 ./config.json 读取配置）
-llm-mock-api start
+uv run llm-mock-api start
 
 # 或直接（不传子命令也等同于 start）
-llm-mock-api
+uv run llm-mock-api
 
 # 指定端口和规则文件
-llm-mock-api start -p 8002 -r ./rules.json5
+uv run llm-mock-api start -p 8002 -r ./rules.json5
 
 # 开启 watch 模式（规则文件变化时自动重载）
-llm-mock-api start -r ./rules.json5 -w
+uv run llm-mock-api start -r ./rules.json5 -w
 
 # 设置日志级别
-llm-mock-api start --log-level info
+uv run llm-mock-api start --log-level info
 ```
 
 **所有选项：**
@@ -60,13 +60,13 @@ llm-mock-api start --log-level info
 
 ```bash
 # 在当前目录生成 config.json 和 rules.json5
-llm-mock-api init
+uv run llm-mock-api init
 
 # 指定输出目录
-llm-mock-api init -d ./my-project
+uv run llm-mock-api init -d ./my-project
 
 # 覆盖已有文件
-llm-mock-api init --force
+uv run llm-mock-api init --force
 ```
 
 生成的示例：
@@ -112,10 +112,10 @@ llm-mock-api init --force
 
 ```bash
 # 检查单个文件
-llm-mock-api validate ./rules.json5
+uv run llm-mock-api validate ./rules.json5
 
 # 检查整个目录（递归查找 .json5/.json 文件）
-llm-mock-api validate ./rules/
+uv run llm-mock-api validate ./rules/
 ```
 
 检查内容：
@@ -199,8 +199,7 @@ async def main():
     # 9. 次数限制：仅匹配 1 次后自动失效
     server.when("once").reply("This rule fires only once!").times(1)
 
-    # 10. 运行服务器
-    print(f"Server running at {server.url}")
+    # 10. 启动服务器
     await server.run_until_shutdown()
 
 asyncio.run(main())
